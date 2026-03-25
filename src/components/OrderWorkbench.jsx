@@ -1,223 +1,312 @@
 import { useMemo, useState } from "react";
 import { Download, FileUp, RefreshCcw } from "lucide-react";
-import { utils, writeFile } from "xlsx";
+import { read, utils, writeFile } from "xlsx";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
-import {
-  findValue,
-  parseDateLabel,
-  parseNumber,
-  readSpreadsheet,
-  unique
-} from "../utils/data";
 
-const aliases = {
-  barcode: ["바코드", "barcode", "skubarcode", "code"],
-  qty: ["발주수량", "수량", "qty", "orderqty", "confirmedqty"],
-  amount: ["총발주금액", "합계금액", "amount", "totalamount"],
-  price: ["발주단가", "매입가", "price", "cost"],
-  center: ["물류센터", "센터", "logisticscenter", "destination", "center"],
-  date: ["입고예정일", "date", "duedate", "entrydate"],
-  orderNo: ["발주번호", "orderno", "pono", "ordernumber"]
-};
+const paletteCbm = 1.65;
 
-async function fetchCbmMap(barcodes) {
-  if (!isSupabaseConfigured || barcodes.length === 0) {
+// ── Helpers (원본 로직 그대로) ──────────────────────────────────────────
+
+function excelDateToYYMMDD(serial) {
+  if (!serial) return "N/A";
+  if (typeof serial === "string" && serial.includes("-"))
+    return serial.replace(/-/g, "").slice(2, 8);
+  if (typeof serial === "string") {
+    const digits = serial.replace(/\D/g, "");
+    if (digits.length === 8) return digits.slice(2, 8);
+    return serial;
+  }
+  const utcDays = Math.floor(serial - 25569);
+  const utcValue = utcDays * 86400;
+  const d = new Date(utcValue * 1000);
+  const y = d.getFullYear().toString().slice(2);
+  const m = (d.getMonth() + 1).toString().padStart(2, "0");
+  const day = d.getDate().toString().padStart(2, "0");
+  return `${y}${m}${day}`;
+}
+
+function parseNum(val) {
+  if (!val) return 0;
+  if (typeof val === "number") return val;
+  const str = String(val).replace(/,/g, "").trim();
+  return parseFloat(str) || 0;
+}
+
+function getVal(row, keys) {
+  for (const k of keys) if (row[k] !== undefined) return row[k];
+  return undefined;
+}
+
+// ── Supabase fetch (graceful fallback) ─────────────────────────────────
+
+async function fetchCbmData(barcodes) {
+  if (!isSupabaseConfigured || barcodes.length === 0) return {};
+
+  const cbmMap = {};
+  let dbCols = [];
+
+  // DB 컬럼 탐색
+  try {
+    const { data: checkData, error: checkError } = await supabase
+      .from("skulist")
+      .select("*")
+      .limit(5);
+    if (checkError || !checkData || checkData.length === 0) return {};
+    dbCols = Object.keys(checkData[0]);
+  } catch {
     return {};
   }
 
-  const result = {};
-  const chunkSize = 100;
+  const candidates = ["바코드", "barcode", "Barcode", "code", "SKU ID", "id"];
+  const searchKey = candidates.find((k) => dbCols.includes(k)) || "바코드";
+  const CHUNK = 200;
 
-  for (let index = 0; index < barcodes.length; index += chunkSize) {
-    const batch = barcodes.slice(index, index + chunkSize);
+  for (let i = 0; i < barcodes.length; i += CHUNK) {
+    const chunk = barcodes.slice(i, i + CHUNK);
     const { data, error } = await supabase
       .from("skulist")
       .select("*")
-      .in("바코드", batch);
+      .in(searchKey, chunk);
 
     if (error) {
-      console.warn("skulist 조회 실패 (테이블 미존재 가능):", error.message);
-      return result;
+      console.warn("skulist 조회 실패:", error.message);
+      return cbmMap;
     }
 
-    (data || []).forEach((row) => {
-      const barcode = row["바코드"] || row.barcode;
-      const cbm = row.cbm || row.CBM || row.Cbm || 0;
-      if (barcode) {
-        result[String(barcode).trim()] = Number(cbm) || 0;
+    (data || []).forEach((item) => {
+      const key = String(item[searchKey] || "").trim();
+      let val = item.cbm || item.CBM || item.Cbm;
+      if (val === undefined) {
+        const cbmKey = Object.keys(item).find((k) =>
+          k.toLowerCase().includes("cbm")
+        );
+        if (cbmKey) val = item[cbmKey];
       }
+      cbmMap[key] = parseFloat(val) || 0;
     });
   }
 
-  return result;
+  return cbmMap;
 }
 
 async function fetchTransportCosts() {
-  if (!isSupabaseConfigured) {
+  if (!isSupabaseConfigured) return {};
+  try {
+    const { data, error } = await supabase
+      .from("milk_run_costs")
+      .select("center_clean, cost_per_pallet");
+    if (error) return {};
+    const result = {};
+    (data || []).forEach((item) => {
+      const key = String(item.center_clean || "").replace(/\s+/g, "");
+      if (key) result[key] = Number(item.cost_per_pallet) || 0;
+    });
+    return result;
+  } catch {
     return {};
   }
-  const { data, error } = await supabase
-    .from("milk_run_costs")
-    .select("center_clean, cost_per_pallet");
-
-  if (error) {
-    console.warn("milk_run_costs 조회 실패 (테이블 미존재 가능):", error.message);
-    return {};
-  }
-
-  const result = {};
-  (data || []).forEach((row) => {
-    const key = String(row.center_clean || "").replace(/\s+/g, "");
-    if (key) {
-      result[key] = Number(row.cost_per_pallet) || 0;
-    }
-  });
-  return result;
 }
 
-export default function OrderWorkbench() {
-  const [rows, setRows] = useState([]);
-  const [groups, setGroups] = useState([]);
-  const [transportCosts, setTransportCosts] = useState({});
-  const [message, setMessage] = useState("샘플 또는 발주 파일을 업로드하세요.");
-  const [isProcessing, setIsProcessing] = useState(false);
+// ── Component ──────────────────────────────────────────────────────────
 
-  const handleUpload = async (event) => {
-    const file = event.target.files?.[0];
+export default function OrderWorkbench() {
+  const [data, setData] = useState([]);
+  const [summary, setSummary] = useState([]);
+  const [transportCosts, setTransportCosts] = useState({});
+  const [message, setMessage] = useState("발주 파일을 업로드하세요.");
+  const [loading, setLoading] = useState(false);
+
+  const handleUpload = (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
-    const nextRows = await readSpreadsheet(file);
-    setRows(nextRows);
-    setGroups([]);
-    setMessage(`${nextRows.length.toLocaleString()}행을 불러왔습니다.`);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const wb = read(ev.target.result, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const jsonData = utils.sheet_to_json(ws);
+      setData(jsonData);
+      setSummary([]);
+      setMessage(`${jsonData.length.toLocaleString()}행을 불러왔습니다.`);
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const handleProcess = async () => {
-    if (rows.length === 0) {
+    if (data.length === 0) {
       setMessage("먼저 발주 파일을 업로드하세요.");
       return;
     }
+    setLoading(true);
+    setMessage("처리 중...");
 
-    setIsProcessing(true);
-    setMessage("발주 데이터를 정리하는 중입니다.");
+    // 1. Transport costs
+    const costMap = await fetchTransportCosts();
+    setTransportCosts(costMap);
+
+    // 2. Barcodes 추출
+    const normalizeStr = (val) => (val ? String(val).trim() : "");
+    const barcodes = [
+      ...new Set(
+        data
+          .map((row) => {
+            const code =
+              row["바코드"] || row["Barcode"] || row["barcode"] ||
+              row["code"] || row["SKU Barcode"] || row["sku barcode"];
+            return normalizeStr(code);
+          })
+          .filter(Boolean)
+      ),
+    ];
+
+    // 3. CBM fetch
+    const cbmMap = await fetchCbmData(barcodes);
+    let matchedCount = 0;
 
     try {
-      const barcodes = unique(
-        rows.map((row) => String(findValue(row, aliases.barcode) || "").trim())
-      );
-      const [cbmMap, costMap] = await Promise.all([
-        fetchCbmMap(barcodes),
-        fetchTransportCosts()
-      ]);
+      // 4. Grouping (원본 로직)
+      const groups = {};
 
-      const grouped = new Map();
+      data.forEach((row) => {
+        const rawDate = getVal(row, ["입고예정일", "Entry Date", "date", "입고일"]);
+        const displayDate = excelDateToYYMMDD(rawDate);
+        const center =
+          getVal(row, ["물류센터", "Logistics Center", "목적지", "Destination", "창고"]) || "Unknown";
+        const orderNo =
+          getVal(row, ["발주번호", "Order No", "No", "PO No", "Order Number"]) || "Unknown";
 
-      rows.forEach((row) => {
-        const date = parseDateLabel(findValue(row, aliases.date));
-        const center = String(findValue(row, aliases.center) || "미지정 센터").trim();
-        const orderNo = String(findValue(row, aliases.orderNo) || "미지정 발주").trim();
-        const barcode = String(findValue(row, aliases.barcode) || "").trim();
-        const qty = parseNumber(findValue(row, aliases.qty));
-        const amount =
-          parseNumber(findValue(row, aliases.amount)) ||
-          qty * parseNumber(findValue(row, aliases.price));
-        const cbm = (cbmMap[barcode] || 0) * qty;
-        const key = `${date}__${center}`;
+        const key = `${displayDate}_${center}`;
 
-        if (!grouped.has(key)) {
-          grouped.set(key, {
-            date,
+        if (!groups[key]) {
+          groups[key] = {
+            date: displayDate,
             center,
-            orderCount: 0,
             qty: 0,
             amount: 0,
             totalCbm: 0,
-            orders: new Set()
-          });
+            orders: {},
+          };
         }
 
-        const current = grouped.get(key);
-        current.qty += qty;
-        current.amount += amount;
-        current.totalCbm += cbm;
-        current.orders.add(orderNo);
-        current.orderCount = current.orders.size;
+        if (!groups[key].orders[orderNo]) {
+          groups[key].orders[orderNo] = 0;
+        }
+
+        const qty = parseNum(
+          getVal(row, ["발주수량", "Order Qty", "수량", "Qty", "qty"])
+        );
+        let amount = parseNum(
+          getVal(row, [
+            "총발주매입금", "총발주 매입금", "총발주금액", "총 발주 금액",
+            "합계금액", "합계", "Total Amount", "Amount", "발주금액",
+          ])
+        );
+        if (amount === 0) {
+          const price = parseNum(
+            getVal(row, ["발주단가", "발주 단가", "매입단가", "Price", "Cost", "단가"])
+          );
+          if (price > 0) amount = qty * price;
+        }
+
+        const codeRaw = getVal(row, [
+          "바코드", "Barcode", "barcode", "code", "SKU Barcode", "sku barcode",
+        ]);
+        const barcode = normalizeStr(codeRaw);
+        const itemCbm = cbmMap[barcode];
+
+        let rowCbm = 0;
+        if (itemCbm !== undefined) {
+          matchedCount++;
+          rowCbm = qty * itemCbm;
+        }
+
+        groups[key].totalCbm += rowCbm;
+        groups[key].orders[orderNo] += rowCbm;
+        groups[key].qty += qty;
+        groups[key].amount += amount;
       });
 
-      const normalizedGroups = [...grouped.values()]
-        .map((group) => {
-          const centerKey = group.center.replace(/\s+/g, "");
-          const estimatedPallets =
-            group.totalCbm >= 0.5 ? Math.ceil(group.totalCbm / 1.65) : 0;
-          return {
-            ...group,
-            estimatedPallets,
-            transportCost:
-              estimatedPallets > 0 ? (costMap[centerKey] || 0) * estimatedPallets : 0
-          };
+      // 5. Result array
+      const resultArray = Object.values(groups)
+        .map((g) => {
+          const orderList = Object.entries(g.orders)
+            .map(([no, cbm]) => ({ no, cbm }))
+            .sort((a, b) => b.cbm - a.cbm);
+          return { ...g, orderList, orderCount: orderList.length };
         })
-        .sort((left, right) => left.date.localeCompare(right.date));
+        .sort((a, b) => a.date.localeCompare(b.date));
 
-      setTransportCosts(costMap);
-      setGroups(normalizedGroups);
-      setMessage(
-        `${normalizedGroups.length.toLocaleString()}개 그룹으로 정리했습니다.`
-      );
-    } catch (error) {
-      setMessage(`정리 중 오류가 발생했습니다: ${error.message}`);
+      setSummary(resultArray);
+      setMessage(`완료! (CBM 매칭: ${matchedCount}건)`);
+    } catch (err) {
+      console.error(err);
+      setMessage("오류: " + err.message);
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
 
   const dashboard = useMemo(() => {
-    return groups.reduce(
-      (acc, group) => {
+    return summary.reduce(
+      (acc, g) => {
         acc.groupCount += 1;
-        acc.totalQty += group.qty;
-        acc.totalAmount += group.amount;
-        acc.totalCbm += group.totalCbm;
-        acc.totalPallets += group.estimatedPallets;
+        acc.totalQty += g.qty;
+        acc.totalAmount += g.amount;
+        acc.totalCbm += g.totalCbm;
+
+        const rawP = paletteCbm > 0 ? g.totalCbm / paletteCbm : 0;
+        const pCount = rawP >= 0.5 ? Math.ceil(rawP) : 0;
+        acc.totalPallets += pCount;
+
+        const centerKey = g.center.replace(/\s+/g, "");
+        acc.totalPaletteCost += pCount * (transportCosts[centerKey] || 0);
+
         return acc;
       },
-      { groupCount: 0, totalQty: 0, totalAmount: 0, totalCbm: 0, totalPallets: 0 }
+      { groupCount: 0, totalQty: 0, totalAmount: 0, totalCbm: 0, totalPallets: 0, totalPaletteCost: 0 }
     );
-  }, [groups]);
+  }, [summary, transportCosts]);
 
   const handleExport = () => {
-    if (groups.length === 0) return;
-    const worksheet = utils.json_to_sheet(
-      groups.map((group) => ({
-        입고예정일: group.date,
-        물류센터: group.center,
-        주문건수: group.orderCount,
-        총수량: group.qty,
-        총금액: group.amount,
-        총CBM: Number(group.totalCbm.toFixed(3)),
-        예상팔레트: group.estimatedPallets,
-        추정운송비: group.transportCost
-      }))
-    );
-    const workbook = utils.book_new();
-    utils.book_append_sheet(workbook, worksheet, "order_summary");
-    writeFile(workbook, "order-summary.xlsx");
+    if (summary.length === 0) return;
+    const rows = summary.map((g) => {
+      const rawP = paletteCbm > 0 ? g.totalCbm / paletteCbm : 0;
+      const pCount = rawP >= 0.5 ? Math.ceil(rawP) : 0;
+      const centerKey = g.center.replace(/\s+/g, "");
+      return {
+        입고예정일: g.date,
+        물류센터: g.center,
+        주문건수: g.orderCount,
+        총수량: g.qty,
+        총금액: Math.round(g.amount),
+        총CBM: Number(g.totalCbm.toFixed(3)),
+        예상팔레트: pCount,
+        팔레트비용: pCount * (transportCosts[centerKey] || 0),
+      };
+    });
+    const ws = utils.json_to_sheet(rows);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, "order_summary");
+    writeFile(wb, "order-summary.xlsx");
   };
+
+  // ── Render ─────────────────────────────────────────────────────────
 
   return (
     <div className="workspace-stack">
       <div className="action-row">
-          <label className="file-button">
-            <FileUp size={16} />
-            발주 파일 업로드
-            <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUpload} />
-          </label>
-          <button className="secondary-button" onClick={handleProcess}>
-            <RefreshCcw size={16} />
-            {isProcessing ? "정리 중..." : "지표 생성"}
-          </button>
-          <button className="secondary-button" onClick={handleExport}>
-            <Download size={16} />
-            요약 내보내기
-          </button>
+        <label className="file-button">
+          <FileUp size={16} />
+          발주 파일 업로드
+          <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUpload} />
+        </label>
+        <button className="secondary-button" onClick={handleProcess} disabled={loading}>
+          <RefreshCcw size={16} />
+          {loading ? "정리 중..." : "지표 생성"}
+        </button>
+        <button className="secondary-button" onClick={handleExport}>
+          <Download size={16} />
+          요약 내보내기
+        </button>
       </div>
       {message && <p className="workspace-message">{message}</p>}
 
@@ -225,74 +314,70 @@ export default function OrderWorkbench() {
         <article className="glass-card stat-card">
           <span>그룹 수</span>
           <strong>{dashboard.groupCount}</strong>
-          <p>날짜 + 센터 기준</p>
         </article>
         <article className="glass-card stat-card">
           <span>총 수량</span>
           <strong>{dashboard.totalQty.toLocaleString()}</strong>
-          <p>발주 합계 수량</p>
         </article>
         <article className="glass-card stat-card">
           <span>총 금액</span>
           <strong>₩{dashboard.totalAmount.toLocaleString()}</strong>
-          <p>합산 발주 금액</p>
+        </article>
+        <article className="glass-card stat-card">
+          <span>총 CBM</span>
+          <strong>{dashboard.totalCbm.toFixed(1)}</strong>
         </article>
         <article className="glass-card stat-card">
           <span>예상 팔레트</span>
           <strong>{dashboard.totalPallets}</strong>
-          <p>CBM 1.65 기준 추정</p>
+        </article>
+        <article className="glass-card stat-card">
+          <span>팔레트 비용</span>
+          <strong>₩{dashboard.totalPaletteCost.toLocaleString()}</strong>
         </article>
       </section>
 
       <section className="glass-card table-card">
-        <div className="table-header-line">
-          <div>
-            <div className="section-label">Center Summary</div>
-            <h2>센터별 발주 정리 결과</h2>
-          </div>
-          <div className="table-chip">
-            등록된 운송비 센터 {Object.keys(transportCosts).length}개
-          </div>
-        </div>
-
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
                 <th>입고예정일</th>
                 <th>물류센터</th>
+                <th>팔레트 비용</th>
                 <th>주문건수</th>
                 <th>총수량</th>
                 <th>총금액</th>
                 <th>총CBM</th>
-                <th>예상팔레트</th>
-                <th>추정운송비</th>
+                <th>팔레트 수</th>
               </tr>
             </thead>
             <tbody>
-              {groups.length === 0 ? (
+              {summary.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="empty-state">
                     업로드 후 지표 생성을 실행하면 이곳에 결과가 표시됩니다.
                   </td>
                 </tr>
               ) : (
-                groups.map((group) => (
-                  <tr key={`${group.date}-${group.center}`}>
-                    <td>{group.date}</td>
-                    <td>{group.center}</td>
-                    <td>{group.orderCount}</td>
-                    <td>{group.qty.toLocaleString()}</td>
-                    <td>₩{Math.round(group.amount).toLocaleString()}</td>
-                    <td>{group.totalCbm.toFixed(2)}</td>
-                    <td>{group.estimatedPallets}</td>
-                    <td>
-                      {group.transportCost
-                        ? `₩${group.transportCost.toLocaleString()}`
-                        : "-"}
-                    </td>
-                  </tr>
-                ))
+                summary.map((g) => {
+                  const rawP = paletteCbm > 0 ? g.totalCbm / paletteCbm : 0;
+                  const pCount = rawP >= 0.5 ? Math.ceil(rawP) : 0;
+                  const centerKey = g.center.replace(/\s+/g, "");
+                  const cost = pCount * (transportCosts[centerKey] || 0);
+                  return (
+                    <tr key={`${g.date}-${g.center}`}>
+                      <td>{g.date}</td>
+                      <td>{g.center}</td>
+                      <td>{cost ? `₩${cost.toLocaleString()}` : "-"}</td>
+                      <td>{g.orderCount}</td>
+                      <td>{g.qty.toLocaleString()}</td>
+                      <td>₩{Math.round(g.amount).toLocaleString()}</td>
+                      <td>{g.totalCbm.toFixed(1)}</td>
+                      <td>{pCount || ""}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
