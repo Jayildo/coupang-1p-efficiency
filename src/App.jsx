@@ -47,7 +47,7 @@ const TABS = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("intro");
-  const activeUsers = useActiveUsers();
+  const { activeCount, totalVisitors } = useActiveUsers();
   const [theme, setTheme] = useState(
     () => localStorage.getItem("c1p-theme") || "light"
   );
@@ -85,10 +85,16 @@ export default function App() {
           })}
         </nav>
 
-        {activeUsers !== null && (
+        {activeCount !== null && (
           <div className="sidebar-live">
             <span className="live-dot" />
-            <span className="live-text">{activeUsers}명 접속 중</span>
+            <span className="live-text">{activeCount}명 접속 중</span>
+          </div>
+        )}
+        {totalVisitors !== null && (
+          <div className="sidebar-live" style={{ opacity: 0.6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--hanomad-accent)", flexShrink: 0 }} />
+            <span className="live-text">누적 {totalVisitors.toLocaleString()}명</span>
           </div>
         )}
 

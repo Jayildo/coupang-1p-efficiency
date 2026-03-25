@@ -15,6 +15,7 @@ function getFingerprint() {
 
 export function useActiveUsers() {
   const [count, setCount] = useState(null);
+  const [totalVisitors, setTotalVisitors] = useState(null);
   const intervalRef = useRef(null);
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export function useActiveUsers() {
           .from("active_users")
           .upsert({ fingerprint: fp, last_seen: new Date().toISOString() }, { onConflict: "fingerprint" });
       } catch (e) {
-        // heartbeat 실패는 UX에 영향 없으므로 무시 (네트워크 일시 불량 등)
+        // heartbeat 실패는 UX에 영향 없으므로 무시
       }
     };
 
@@ -41,8 +42,24 @@ export function useActiveUsers() {
       }
     };
 
+    // 누적 방문자: 첫 방문 시 기록, 총 카운트 조회
+    const recordVisit = async () => {
+      try {
+        await supabase
+          .from("visitors")
+          .upsert({ fingerprint: fp, first_seen: new Date().toISOString() }, { onConflict: "fingerprint", ignoreDuplicates: true });
+        const { count: total, error } = await supabase
+          .from("visitors")
+          .select("*", { count: "exact", head: true });
+        if (!error && total !== null) setTotalVisitors(total);
+      } catch (e) {
+        // 방문자 기록 실패 무시
+      }
+    };
+
     heartbeat();
     fetchCount();
+    recordVisit();
 
     intervalRef.current = setInterval(() => {
       heartbeat();
@@ -62,5 +79,5 @@ export function useActiveUsers() {
     };
   }, []);
 
-  return count;
+  return { activeCount: count, totalVisitors };
 }
