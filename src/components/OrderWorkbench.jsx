@@ -130,9 +130,6 @@ export default function OrderWorkbench() {
         const firstRow = jsonData[0];
         const cols = Object.keys(firstRow);
 
-        console.log("[SKU 디버깅] 컬럼 목록:", cols);
-        console.log("[SKU 디버깅] 첫 행:", firstRow);
-
         const barcodeAliases = ["바코드", "barcode", "Barcode", "code", "SKU Barcode", "sku barcode", "상품바코드", "SKU바코드"];
         const cbmAliases = ["cbm", "CBM", "Cbm", "씨비엠", "CBM(m³)"];
         const lengthAliases = ["길이 (mm)", "길이(mm)", "길이", "length"];
@@ -148,8 +145,6 @@ export default function OrderWorkbench() {
         const hgtCol = heightAliases.find((k) => cols.includes(k));
 
         const canCalcCbm = lenCol && widCol && hgtCol;
-
-        console.log("[SKU 디버깅] 매칭된 바코드 컬럼:", barcodeCol, "/ CBM 컬럼:", cbmCol, "/ 치수:", lenCol, widCol, hgtCol);
 
         if (!barcodeCol) {
           setSkuMessage(`바코드 컬럼을 찾을 수 없습니다. 컬럼: ${cols.join(", ")}`);
@@ -265,19 +260,6 @@ export default function OrderWorkbench() {
     const supabaseCbm = await fetchCbmData(barcodes);
     const mergedCbmMap = { ...supabaseCbm, ...localCbmMap };
     let matchedCount = 0;
-
-    // 디버깅: 매칭 상태 로그
-    const cbmKeys = Object.keys(mergedCbmMap);
-    console.log("[CBM 디버깅] 발주서 바코드 샘플(5):", barcodes.slice(0, 5));
-    console.log("[CBM 디버깅] SKU 바코드 샘플(5):", cbmKeys.slice(0, 5));
-    console.log("[CBM 디버깅] 발주서 바코드 수:", barcodes.length, "/ SKU 바코드 수:", cbmKeys.length);
-    if (barcodes.length > 0 && cbmKeys.length > 0) {
-      const sampleMatch = cbmKeys.find((k) => barcodes.includes(k));
-      console.log("[CBM 디버깅] 첫 매칭:", sampleMatch || "없음");
-      if (!sampleMatch) {
-        console.log("[CBM 디버깅] 타입 비교 — 발주서:", typeof barcodes[0], JSON.stringify(barcodes[0]), "/ SKU:", typeof cbmKeys[0], JSON.stringify(cbmKeys[0]));
-      }
-    }
 
     try {
       const groups = {};

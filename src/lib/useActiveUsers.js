@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { isSupabaseConfigured, supabase } from "./supabase";
 
-const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+const HEARTBEAT_INTERVAL = 30000;
 const FP_KEY = "c1p_fp";
 
 function getFingerprint() {
@@ -22,36 +22,35 @@ export function useActiveUsers() {
 
     const fp = getFingerprint();
 
-    // Heartbeat: upsert current user
     const heartbeat = async () => {
       try {
         await supabase
           .from("active_users")
           .upsert({ fingerprint: fp, last_seen: new Date().toISOString() }, { onConflict: "fingerprint" });
-      } catch {}
+      } catch (e) {
+        // heartbeat 실패는 UX에 영향 없으므로 무시 (네트워크 일시 불량 등)
+      }
     };
 
-    // Fetch count
     const fetchCount = async () => {
       try {
         const { data, error } = await supabase.rpc("get_active_user_count");
         if (!error && data !== null) setCount(data);
-      } catch {}
+      } catch (e) {
+        // count 조회 실패 시 기존 값 유지
+      }
     };
 
-    // Initial
     heartbeat();
     fetchCount();
 
-    // Interval
     intervalRef.current = setInterval(() => {
       heartbeat();
       fetchCount();
     }, HEARTBEAT_INTERVAL);
 
-    // Cleanup on unmount (remove user)
     const cleanup = () => {
-      supabase.from("active_users").delete().eq("fingerprint", fp).then(() => {});
+      supabase.from("active_users").delete().eq("fingerprint", fp).catch(() => {});
     };
 
     window.addEventListener("beforeunload", cleanup);

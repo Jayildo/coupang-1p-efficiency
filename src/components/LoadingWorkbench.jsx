@@ -9,6 +9,11 @@ import {
   unique
 } from "../utils/data";
 
+// ── Helpers ───────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 // ── Constants ──────────────────────────────────────────────────────────────
 const SUB_TABS = [
   { id: "upload", label: "업로드" },
@@ -584,7 +589,7 @@ export default function LoadingWorkbench() {
           const boxCell = bg[idx]?.show
             ? `<td rowspan="${bg[idx].rowSpan}" style="vertical-align:middle;font-weight:600">${bg[idx].boxCount}</td>`
             : "";
-          rows += `<tr><td>${p * rpp + idx + 1}</td><td>${it.sku}</td><td class="left">${it.name}</td>${boxCell}<td>${it.box || ""}</td><td>${it.qty.toLocaleString()}</td><td>${it.expiry || ""}</td></tr>`;
+          rows += `<tr><td>${p * rpp + idx + 1}</td><td>${escHtml(it.sku)}</td><td class="left">${escHtml(it.name)}</td>${boxCell}<td>${escHtml(it.box)}</td><td>${it.qty.toLocaleString()}</td><td>${escHtml(it.expiry)}</td></tr>`;
         });
         for (let e = pg.length; e < rpp; e++) {
           rows += `<tr><td>${p * rpp + e + 1}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
@@ -594,11 +599,11 @@ export default function LoadingWorkbench() {
           <div class="header-info">
             <div style="display:flex;justify-content:space-between"><span>총 팔레트 수 <b>${tp}</b> - 해당 팔레트 번호 <b>${pNo}</b></span><span>박스수량. [ <b>${ub}</b> BOX]</span></div>
             <div style="display:flex">
-              <span style="flex:1"><b>입고예정일자.</b> [ ${items[0]?.date || ""} ]</span>
-              <span style="flex:1"><b>납품센터명.</b> [ ${selectedCenter} 센터]</span>
-              <span style="flex:1"><b>업체명.</b> [ <b>${vendorName || "-"}</b> ]</span>
+              <span style="flex:1"><b>입고예정일자.</b> [ ${escHtml(items[0]?.date)} ]</span>
+              <span style="flex:1"><b>납품센터명.</b> [ ${escHtml(selectedCenter)} 센터]</span>
+              <span style="flex:1"><b>업체명.</b> [ <b>${escHtml(vendorName) || "-"}</b> ]</span>
             </div>
-            <div><b>입고요청서번호.</b> [ <span style="font-size:14px">${po || "____"}</span> ]</div>
+            <div><b>입고요청서번호.</b> [ <span style="font-size:14px">${escHtml(po) || "____"}</span> ]</div>
           </div>
           <table><thead><tr>
             <th>NO</th><th>거래명세서의 상품번호</th><th>물류 입고용 상품명 + 옵션명</th><th>총 박스<br>수량</th><th>BOX 번호</th><th>수량</th><th>유통기한/제조일자</th>
@@ -622,16 +627,16 @@ export default function LoadingWorkbench() {
         let rows = "";
         pg.forEach(
           (it, idx) =>
-            (rows += `<tr><td>${p * BOX_ROWS_PER_PAGE + idx + 1}</td><td>${it.sku}</td><td class="left">${it.name}</td><td>${it.barcode}</td><td>${it.qty.toLocaleString()}</td></tr>`)
+            (rows += `<tr><td>${p * BOX_ROWS_PER_PAGE + idx + 1}</td><td>${escHtml(it.sku)}</td><td class="left">${escHtml(it.name)}</td><td>${escHtml(it.barcode)}</td><td>${it.qty.toLocaleString()}</td></tr>`)
         );
         body += `<div class="print-page">
           <div class="title">쿠팡 박스 적재리스트</div>
           <div class="header-info">
             <div><b>박스번호.</b> [ <b>${bNo}</b> ]</div>
             <div style="display:flex">
-              <span style="flex:1"><b>입고예정일자.</b> [ ${items[0]?.date || ""} ]</span>
-              <span style="flex:1"><b>납품센터명.</b> [ ${selectedCenter} 센터]</span>
-              <span style="flex:1"><b>업체명.</b> [ <b>${vendorName || "-"}</b> ]</span>
+              <span style="flex:1"><b>입고예정일자.</b> [ ${escHtml(items[0]?.date)} ]</span>
+              <span style="flex:1"><b>납품센터명.</b> [ ${escHtml(selectedCenter)} 센터]</span>
+              <span style="flex:1"><b>업체명.</b> [ <b>${escHtml(vendorName) || "-"}</b> ]</span>
             </div>
           </div>
           <table><thead><tr><th>번호</th><th>SKU No</th><th>SKU NAME</th><th>바코드</th><th>수량</th></tr></thead><tbody>${rows}</tbody></table>
