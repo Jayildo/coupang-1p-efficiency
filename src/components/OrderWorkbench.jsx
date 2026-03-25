@@ -234,74 +234,73 @@ export default function OrderWorkbench() {
       {/* ── 3-Column Cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* Card 1: 파일 업로드 */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div className="ow-card">
           <h3 className="font-semibold mb-2">1. 발주서 파일 업로드</h3>
           <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUpload} className="file-input mb-4" />
           {data.length > 0 && (
             <div className="mt-2">
-              <button onClick={processOrderData} disabled={loading}
-                className="w-full bg-stone-700 text-white px-6 py-2 rounded-lg shadow hover:bg-stone-800 disabled:bg-slate-400 font-bold transition-all">
+              <button onClick={processOrderData} disabled={loading} className="ow-btn-primary px-6 py-2">
                 {loading ? "계산 중..." : "데이터 변환 및 요약 계산"}
               </button>
-              <p className="mt-2 text-sm text-slate-600 text-center">{message}</p>
+              <p className="mt-2 ow-text-muted text-center">{message}</p>
             </div>
           )}
         </div>
 
         {/* Card 2: 요약 대시보드 */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 min-h-[100px] flex items-center justify-center">
+        <div className="ow-card min-h-[100px] flex items-center justify-center">
           {!dashboardData ? (
-            <div className="text-slate-400 text-sm">데이터 변환 버튼을 누르면 요약 대시보드가 표시됩니다.</div>
+            <div className="ow-text-placeholder">데이터 변환 버튼을 누르면 요약 대시보드가 표시됩니다.</div>
           ) : (
             <div className="grid grid-cols-2 gap-3 w-full text-center">
-              <div className="p-2 bg-slate-50 rounded-lg">
-                <div className="text-xs text-slate-500 mb-1">예정일&센터</div>
-                <div className="text-lg font-bold text-slate-800">{dashboardData.groupCount}</div>
+              <div className="ow-stat-cell">
+                <div className="ow-stat-label">예정일&센터</div>
+                <div className="ow-stat-value-neutral">{dashboardData.groupCount}</div>
               </div>
-              <div className="p-2 bg-slate-50 rounded-lg">
-                <div className="text-xs text-slate-500 mb-1">총 발주수량</div>
-                <div className="text-lg font-bold text-amber-800">{dashboardData.totalQty.toLocaleString()}</div>
+              <div className="ow-stat-cell">
+                <div className="ow-stat-label">총 발주수량</div>
+                <div className="ow-stat-value">{dashboardData.totalQty.toLocaleString()}</div>
               </div>
-              <div className="p-2 bg-slate-50 rounded-lg">
-                <div className="text-xs text-slate-500 mb-1">총 발주금액</div>
-                <div className="text-lg font-bold text-amber-800">{dashboardData.totalAmount.toLocaleString()}</div>
+              <div className="ow-stat-cell">
+                <div className="ow-stat-label">총 발주금액</div>
+                <div className="ow-stat-value">{dashboardData.totalAmount.toLocaleString()}</div>
               </div>
-              <div className="p-2 bg-slate-50 rounded-lg">
-                <div className="text-xs text-slate-500 mb-1">총 CBM</div>
-                <div className="text-lg font-bold text-amber-800">{dashboardData.totalCbm.toFixed(1)}</div>
+              <div className="ow-stat-cell">
+                <div className="ow-stat-label">총 CBM</div>
+                <div className="ow-stat-value">{dashboardData.totalCbm.toFixed(1)}</div>
               </div>
-              <div className="p-2 bg-orange-50 rounded-lg border border-orange-100">
-                <div className="text-xs text-slate-500 mb-1">팔레트 CBM 기준</div>
+              <div className="ow-highlight-cell">
+                <div className="ow-stat-label">팔레트 CBM 기준</div>
                 <input type="number" step="0.01" value={paletteCbm}
                   onChange={(e) => setPaletteCbm(parseFloat(e.target.value) || 0)}
-                  className="w-full text-center text-lg font-bold text-orange-700 bg-transparent outline-none border-b border-orange-200 focus:border-orange-500" />
+                  className="ow-highlight-input" />
               </div>
-              <div className="p-2 bg-amber-50 rounded-lg border border-amber-200">
-                <div className="text-xs text-slate-500 mb-1">총 팔레트 비용</div>
-                <div className="text-lg font-bold text-amber-800">{totalPaletteCost.toLocaleString()} 원</div>
+              <div className="ow-summary-cell">
+                <div className="ow-stat-label">총 팔레트 비용</div>
+                <div className="ow-stat-value">{totalPaletteCost.toLocaleString()} 원</div>
               </div>
             </div>
           )}
         </div>
 
         {/* Card 3: 입고예정일별 발주금액 */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 min-h-[100px] flex items-center justify-center">
+        <div className="ow-card min-h-[100px] flex items-center justify-center">
           {!dateStatusGroups ? (
-            <div className="text-slate-400 text-sm">입고예정일별 발주금액이 여기에 표시됩니다.</div>
+            <div className="ow-text-placeholder">입고예정일별 발주금액이 여기에 표시됩니다.</div>
           ) : (() => {
             const dates = Object.keys(dateStatusGroups).sort();
-            if (dates.length === 0) return <div className="text-slate-400 text-sm">데이터 없음</div>;
+            if (dates.length === 0) return <div className="ow-text-placeholder">데이터 없음</div>;
             const totalConfirmed = dates.reduce((s, d) => s + dateStatusGroups[d].confirmed, 0);
             const totalNew = dates.reduce((s, d) => s + dateStatusGroups[d].newOrder, 0);
             return (
               <div className="w-full">
-                <div className="text-xs text-slate-500 mb-3 font-semibold">입고예정일별 발주금액</div>
+                <div className="ow-stat-label mb-3 font-semibold">입고예정일별 발주금액</div>
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-xs text-slate-500 border-b border-slate-200">
+                    <tr className="ow-text-secondary text-xs border-b" style={{borderColor: "var(--hanomad-border)"}}>
                       <th className="text-left py-1.5 px-1">입고예정일</th>
                       <th className="text-right py-1.5 px-1">발주확정</th>
-                      <th className="text-right py-1.5 px-1 text-rose-500">신규</th>
+                      <th className="text-right py-1.5 px-1 ow-new-order">신규</th>
                       <th className="text-right py-1.5 px-1">합계</th>
                     </tr>
                   </thead>
@@ -309,26 +308,26 @@ export default function OrderWorkbench() {
                     {dates.map((date) => {
                       const g = dateStatusGroups[date];
                       return (
-                        <tr key={date} className="border-b border-slate-50 hover:bg-slate-50">
-                          <td className="py-1.5 px-1 text-slate-600 font-medium">{date}</td>
-                          <td className="py-1.5 px-1 text-right text-slate-500">{g.confirmed > 0 ? g.confirmed.toLocaleString() : "-"}</td>
-                          <td className="py-1.5 px-1 text-right text-rose-600 font-semibold">{g.newOrder > 0 ? g.newOrder.toLocaleString() : "-"}</td>
-                          <td className="py-1.5 px-1 text-right font-bold text-amber-800">{(g.confirmed + g.newOrder).toLocaleString()}</td>
+                        <tr key={date} className="border-b" style={{borderColor: "var(--hanomad-border)"}}>
+                          <td className="py-1.5 px-1 ow-text-secondary font-medium">{date}</td>
+                          <td className="py-1.5 px-1 text-right ow-text-secondary">{g.confirmed > 0 ? g.confirmed.toLocaleString() : "-"}</td>
+                          <td className="py-1.5 px-1 text-right ow-new-order">{g.newOrder > 0 ? g.newOrder.toLocaleString() : "-"}</td>
+                          <td className="py-1.5 px-1 text-right font-bold ow-text-accent">{(g.confirmed + g.newOrder).toLocaleString()}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
-                <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-2 py-2.5">
+                <div className="ow-total-box">
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-700 text-sm font-bold">합계</span>
+                    <span className="ow-text-primary text-sm font-bold">합계</span>
                     <div className="flex gap-4 items-baseline">
-                      <span className="text-slate-400 text-xs">{totalConfirmed.toLocaleString()}</span>
-                      <span className="text-rose-500 text-xs">{totalNew.toLocaleString()}</span>
+                      <span className="ow-text-secondary text-xs">{totalConfirmed.toLocaleString()}</span>
+                      <span className="ow-new-order text-xs">{totalNew.toLocaleString()}</span>
                     </div>
                   </div>
                   <div className="text-right mt-1">
-                    <span className="text-lg font-extrabold text-amber-800">{(totalConfirmed + totalNew).toLocaleString()} 원</span>
+                    <span className="text-lg font-extrabold ow-text-accent">{(totalConfirmed + totalNew).toLocaleString()} 원</span>
                   </div>
                 </div>
               </div>
@@ -340,8 +339,7 @@ export default function OrderWorkbench() {
       {/* ── 요약 내보내기 ── */}
       {dashboardData && (
         <div className="mb-6 flex justify-end">
-          <button onClick={handleExport}
-            className="bg-stone-700 text-white px-4 py-2 rounded-lg shadow hover:bg-stone-800 font-bold flex items-center gap-2 text-sm">
+          <button onClick={handleExport} className="ow-btn-secondary">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
@@ -352,9 +350,9 @@ export default function OrderWorkbench() {
 
       {/* ── 결과 테이블 (날짜별 rowSpan + 소계) ── */}
       {summary.length > 0 && (
-        <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200">
-          <table className="w-full text-sm text-left text-slate-500">
-            <thead className="text-xs text-slate-700 uppercase bg-slate-50 border-b">
+        <div className="ow-table-wrap">
+          <table className="ow-table">
+            <thead>
               <tr>
                 <th className="px-6 py-3">입고예정일</th>
                 <th className="px-6 py-3">물류센터</th>
@@ -397,53 +395,50 @@ export default function OrderWorkbench() {
                       const centerKey = row.center.replace(/\s+/g, "");
                       const cost = transportCosts[centerKey] || 0;
 
-                      let badgeColor = "bg-slate-100 text-slate-600";
+                      let badgeClass = "ow-badge-neutral";
                       if (cost > 0 && maxCost > 0) {
-                        if (costRange === 0) {
-                          badgeColor = "bg-slate-100 text-slate-800";
-                        } else {
+                        if (costRange === 0) badgeClass = "ow-badge-neutral";
+                        else {
                           const ratio = (cost - minCost) / costRange;
-                          if (ratio < 0.33) badgeColor = "bg-amber-100 text-amber-700 border border-amber-200";
-                          else if (ratio < 0.66) badgeColor = "bg-orange-100 text-orange-700 border border-orange-200";
-                          else badgeColor = "bg-rose-100 text-rose-700 border border-rose-200";
+                          if (ratio < 0.33) badgeClass = "ow-badge-low";
+                          else if (ratio < 0.66) badgeClass = "ow-badge-mid";
+                          else badgeClass = "ow-badge-high";
                         }
                       }
 
                       const isFirst = ri === 0;
-                      const trClass = isFirst && gi > 0
-                        ? "bg-white border-b border-t-2 border-t-slate-300 hover:bg-slate-50"
-                        : "bg-white border-b hover:bg-slate-50";
+                      const trClass = isFirst && gi > 0 ? "ow-group-separator" : "";
 
                       return (
                         <tr key={`${gi}-${ri}`} className={trClass}>
                           {isFirst && (
-                            <td className="px-6 py-4 font-bold text-slate-900 align-top border-r border-slate-100 bg-slate-50"
+                            <td className="ow-date-cell px-6 py-4"
                               rowSpan={group.rows.length + 1}>
                               {group.date}
                             </td>
                           )}
-                          <td className="px-6 py-4 text-amber-800 cursor-pointer hover:underline transition-colors"
+                          <td className="ow-center-cell px-6 py-4"
                             onClick={() => { setSelectedGroup(row); navigator.clipboard.writeText(row.center); }}
                             title="클릭: 상세 보기 및 센터명 복사">
                             {row.center}
                           </td>
                           <td className="px-6 py-4">
                             {cost > 0 ? (
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColor}`}>
+                              <span className={`ow-badge ${badgeClass}`}>
                                 {cost.toLocaleString()}원
                               </span>
-                            ) : <span className="text-slate-400 text-xs">-</span>}
+                            ) : <span className="ow-text-placeholder">-</span>}
                           </td>
-                          <td className="px-6 py-4 text-right font-medium text-slate-600">{orderCount}</td>
+                          <td className="px-6 py-4 text-right font-medium ow-text-secondary">{orderCount}</td>
                           <td className="px-6 py-4 text-right">{row.qty.toLocaleString()}</td>
                           <td className="px-6 py-4 text-right">{row.amount.toLocaleString()}</td>
-                          <td className="px-6 py-4 text-right text-amber-800 font-bold">{row.totalCbm.toFixed(1)}</td>
-                          <td className="px-6 py-4 text-right text-orange-600 font-bold">{displayP}</td>
+                          <td className="ow-cbm-cell px-6 py-4 text-right">{row.totalCbm.toFixed(1)}</td>
+                          <td className="ow-pallet-cell px-6 py-4 text-right">{displayP}</td>
                         </tr>
                       );
                     })}
                     {/* 소계 */}
-                    <tr className="bg-amber-50 border-b border-amber-200 font-bold text-amber-800">
+                    <tr className="ow-subtotal-row">
                       <td className="px-6 py-3 text-center text-xs">소계</td>
                       <td className="px-6 py-3"></td>
                       <td className="px-6 py-3 text-right">{group.subTotalOrders.toLocaleString()}</td>
@@ -462,37 +457,37 @@ export default function OrderWorkbench() {
 
       {/* ── Modal ── */}
       {selectedGroup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setSelectedGroup(null)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-slate-50 px-6 py-4 border-b flex justify-between items-center">
-              <h3 className="font-bold text-lg text-slate-800">
+        <div className="ow-modal-overlay" onClick={() => setSelectedGroup(null)}>
+          <div className="ow-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ow-modal-header">
+              <h3>
                 {selectedGroup.date} - {selectedGroup.center} 상세
               </h3>
-              <button onClick={() => setSelectedGroup(null)} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+              <button onClick={() => setSelectedGroup(null)} className="ow-modal-close">&times;</button>
             </div>
-            <div className="p-0 max-h-[60vh] overflow-y-auto">
+            <div className="ow-modal-body">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500 sticky top-0">
+                <thead className="ow-table-wrap text-xs uppercase sticky top-0" style={{background: "var(--hanomad-cream)"}}>
                   <tr>
-                    <th className="px-6 py-3 font-semibold border-b">발주번호</th>
-                    <th className="px-6 py-3 font-semibold border-b text-right">총 CBM</th>
+                    <th className="px-6 py-3 font-semibold border-b" style={{borderColor: "var(--hanomad-border)"}}>발주번호</th>
+                    <th className="px-6 py-3 font-semibold border-b text-right" style={{borderColor: "var(--hanomad-border)"}}>총 CBM</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedGroup.orderList.map((order, i) => (
-                    <tr key={i} className="border-b last:border-0 hover:bg-slate-50">
-                      <td className="px-6 py-3 text-slate-700">{order.no}</td>
-                      <td className="px-6 py-3 text-right font-medium text-amber-800">{order.cbm.toFixed(2)}</td>
+                    <tr key={i} className="border-b last:border-0" style={{borderColor: "var(--hanomad-border)"}}>
+                      <td className="px-6 py-3 ow-text-primary">{order.no}</td>
+                      <td className="px-6 py-3 text-right font-medium ow-text-accent">{order.cbm.toFixed(2)}</td>
                     </tr>
                   ))}
                   {selectedGroup.orderList.length === 0 && (
-                    <tr><td colSpan="2" className="px-6 py-8 text-center text-slate-400">상세 내역이 없습니다.</td></tr>
+                    <tr><td colSpan="2" className="px-6 py-8 text-center ow-text-placeholder">상세 내역이 없습니다.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
-            <div className="bg-slate-50 px-6 py-3 border-t text-right">
-              <button onClick={() => setSelectedGroup(null)} className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-100">닫기</button>
+            <div className="ow-modal-footer">
+              <button onClick={() => setSelectedGroup(null)}>닫기</button>
             </div>
           </div>
         </div>
