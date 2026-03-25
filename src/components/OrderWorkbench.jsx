@@ -166,29 +166,37 @@ export default function OrderWorkbench() {
     try {
       const lines = milkRunText.trim().split("\n").map((l) => l.split("\t"));
 
-      // 1. 헤더 행: 첫 셀이 "출고지명"
-      const headerIdx = lines.findIndex((l) => l[0]?.trim() === "출고지명");
-      // 2. BASIC 행: 3번째 컬럼(index 2)이 "BASIC(1pt 당)"
+      // 1. "출고지명" 행 찾기 → 바로 다음 행이 센터명 행
+      const metaIdx = lines.findIndex((l) => l[0]?.trim() === "출고지명");
+      // 2. BASIC 행: 계산단위 컬럼(index 2)이 "BASIC(1pt 당)"
       const basicIdx = lines.findIndex((l) => l[2]?.trim() === "BASIC(1pt 당)");
 
-      if (headerIdx === -1 || basicIdx === -1) {
+      if (metaIdx === -1 || basicIdx === -1) {
         setMilkRunMessage('"출고지명" 행과 계산단위 "BASIC(1pt 당)" 행이 필요합니다.');
         return;
       }
 
-      // 3. 헤더에서 센터명 추출 (4번째 컬럼부터, "이용요금" 메타 텍스트 제외)
-      const headerRow = lines[headerIdx];
-      const centers = [];
-      for (let i = 3; i < headerRow.length; i++) {
-        const val = headerRow[i]?.trim();
-        if (val && !val.includes("이용요금")) centers.push({ val, colIdx: i });
+      // 3. 센터명 행: "출고지명" 바로 다음 행 (센터명들이 나열됨)
+      const centerRow = lines[metaIdx + 1];
+      if (!centerRow || centerRow.length < 2) {
+        setMilkRunMessage("센터명 행을 찾을 수 없습니다.");
+        return;
       }
 
-      // 4. BASIC 행에서 같은 컬럼 인덱스의 비용 추출
+      // 센터명 추출: 빈 셀 제외
+      const centers = [];
+      for (let i = 0; i < centerRow.length; i++) {
+        const val = centerRow[i]?.trim();
+        if (val) centers.push({ val, colIdx: i });
+      }
+
+      // 4. BASIC 행에서 비용 추출 (3번째 컬럼(index 3)부터 = 첫 센터 비용)
+      //    센터는 index 0부터, 비용은 index 3부터이므로 offset = 3
       const basicRow = lines[basicIdx];
+      const costOffset = 3; // BASIC 행의 비용 시작 위치
       const results = [];
-      centers.forEach(({ val, colIdx }) => {
-        const costRaw = basicRow[colIdx]?.trim()?.replace(/,/g, "");
+      centers.forEach(({ val }, i) => {
+        const costRaw = basicRow[costOffset + i]?.trim()?.replace(/,/g, "");
         const cost = parseFloat(costRaw);
         if (!isNaN(cost) && cost > 0) {
           results.push({
