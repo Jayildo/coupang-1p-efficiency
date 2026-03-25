@@ -339,6 +339,7 @@ export default function OrderWorkbench() {
         {/* Card 1: 발주서 업로드 (필수) */}
         <div className="ow-card">
           <h3 className="font-semibold mb-1">1. 발주서 업로드 <span style={{ color: "var(--hanomad-accent)", fontSize: "0.75rem" }}>필수</span></h3>
+          <p className="ow-text-muted mb-3" style={{ fontSize: "0.78rem" }}>서플라이어허브 &gt; 물류 &gt; 발주skulist</p>
           <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUpload} className="file-input mb-4" />
           {data.length > 0 && (
             <div className="mt-2">
@@ -353,7 +354,7 @@ export default function OrderWorkbench() {
         {/* Card 2: SKU 정보 업로드 (선택) */}
         <div className="ow-card">
           <h3 className="font-semibold mb-1">2. SKU 정보 업로드 <span className="ow-text-muted" style={{ fontSize: "0.75rem" }}>선택</span></h3>
-          <p className="ow-text-muted mb-3" style={{ fontSize: "0.8rem" }}>바코드 + CBM 컬럼이 있는 Excel 파일</p>
+          <p className="ow-text-muted mb-3" style={{ fontSize: "0.78rem" }}>서플라이어허브 &gt; 물류 &gt; 상품공급상태관리</p>
           <input type="file" accept=".xlsx,.xls,.csv" onChange={handleSkuUpload} className="file-input mb-3" />
           {skuMessage && (
             <p className={`text-sm mt-1 ${skuMessage.includes("오류") || skuMessage.includes("없습") ? "ow-text-muted" : "ow-text-secondary"}`}
@@ -370,7 +371,8 @@ export default function OrderWorkbench() {
         <div className="ow-card">
           <h3 className="font-semibold mb-2">3. 밀크런 비용 입력 <span className="ow-text-muted" style={{ fontSize: "0.75rem" }}>선택</span></h3>
           <p className="ow-text-muted" style={{ fontSize: "0.78rem", marginBottom: "8px" }}>
-            쿠팡 서플라이어 허브 &gt; 물류 &gt; 밀크런 화면에서 표 영역을 복사해 붙여넣기
+            서플라이어허브 &gt; 물류 &gt; 밀크런 &gt; 이용 &gt; 1.이용요금안내<br />
+            (출고지명 ~ 오른쪽 하단 끝까지 선택 후 복사)
           </p>
           <textarea
             value={milkRunText}
