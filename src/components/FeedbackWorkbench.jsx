@@ -65,7 +65,13 @@ const defaultForm = {
   category: "기능요청",
   title: "",
   content: "",
+  password: "",
 };
+
+async function hashPassword(pw) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 export default function FeedbackWorkbench() {
   const [suggestions, setSuggestions] = useState([]);
@@ -76,6 +82,12 @@ export default function FeedbackWorkbench() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  // User edit/delete state
+  const [authTarget, setAuthTarget] = useState(null); // { id, action: "edit"|"delete" }
+  const [authPassword, setAuthPassword] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ title: "", content: "" });
 
   // Admin state
   const [isAdmin, setIsAdmin] = useState(false);
@@ -191,12 +203,16 @@ export default function FeedbackWorkbench() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("suggestions").insert({
+      const insertData = {
         nickname: form.nickname.trim() || "익명",
         category: form.category,
         title: form.title.trim(),
         content: form.content.trim(),
-      });
+      };
+      if (form.password.trim()) {
+        insertData.password_hash = await hashPassword(form.password.trim());
+      }
+      const { error } = await supabase.from("suggestions").insert(insertData);
       if (error) throw error;
 
       setForm(defaultForm);
@@ -207,6 +223,38 @@ export default function FeedbackWorkbench() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleUserAuth() {
+    if (!authTarget || !authPassword.trim()) return;
+    const hash = await hashPassword(authPassword.trim());
+    const s = suggestions.find((x) => x.id === authTarget.id);
+    if (!s || s.password_hash !== hash) {
+      alert("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+    if (authTarget.action === "delete") {
+      await supabase.from("suggestions").delete().eq("id", authTarget.id);
+      setAuthTarget(null);
+      setAuthPassword("");
+      await fetchData();
+    } else if (authTarget.action === "edit") {
+      setEditingId(authTarget.id);
+      setEditForm({ title: s.title, content: s.content });
+      setAuthTarget(null);
+      setAuthPassword("");
+    }
+  }
+
+  async function handleUserEdit(id) {
+    if (!editForm.title.trim() || !editForm.content.trim()) return;
+    await supabase.from("suggestions").update({
+      title: editForm.title.trim(),
+      content: editForm.content.trim(),
+      updated_at: new Date().toISOString(),
+    }).eq("id", id);
+    setEditingId(null);
+    await fetchData();
   }
 
   function handleAdminLogin() {
@@ -445,6 +493,19 @@ export default function FeedbackWorkbench() {
               />
             </div>
 
+            <div>
+              <label style={{ fontSize: "0.8rem", opacity: 0.7, display: "block", marginBottom: "0.25rem" }}>
+                비밀번호 <span style={{ fontSize: "0.7rem", opacity: 0.6 }}>수정/삭제 시 필요 (선택)</span>
+              </label>
+              <input
+                className="input-field"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                placeholder="비밀번호 설정 (선택)"
+              />
+            </div>
+
             {error && (
               <p style={{ color: "tomato", fontSize: "0.85rem", margin: 0 }}>{error}</p>
             )}
@@ -636,6 +697,98 @@ export default function FeedbackWorkbench() {
                   })}
                 </div>
               </div>
+
+              {/* User edit/delete (password protected) */}
+              {s.password_hash && !isAdmin && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.5rem" }}>
+                  {authTarget?.id === s.id ? (
+                    <>
+                      <input
+                        type="password"
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        placeholder="비밀번호"
+                        onKeyDown={(e) => e.key === "Enter" && handleUserAuth()}
+                        style={{
+                          padding: "3px 8px", fontSize: "0.75rem", border: "1px solid var(--hanomad-border)",
+                          borderRadius: "6px", background: "var(--hanomad-input-bg)", color: "var(--hanomad-text-dark)", width: "100px",
+                        }}
+                      />
+                      <button
+                        onClick={handleUserAuth}
+                        style={{
+                          padding: "3px 10px", fontSize: "0.72rem", border: "1px solid var(--hanomad-border)",
+                          borderRadius: "6px", background: "var(--hanomad-brown)", color: "#fff", cursor: "pointer",
+                        }}
+                      >확인</button>
+                      <button
+                        onClick={() => { setAuthTarget(null); setAuthPassword(""); }}
+                        style={{
+                          padding: "3px 10px", fontSize: "0.72rem", border: "1px solid var(--hanomad-border)",
+                          borderRadius: "6px", background: "var(--hanomad-card)", color: "var(--hanomad-text-light)", cursor: "pointer",
+                        }}
+                      >취소</button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setAuthTarget({ id: s.id, action: "edit" })}
+                        style={{
+                          padding: "3px 10px", fontSize: "0.72rem", border: "1px solid var(--hanomad-border)",
+                          borderRadius: "6px", background: "var(--hanomad-card)", color: "var(--hanomad-text-light)", cursor: "pointer",
+                        }}
+                      >수정</button>
+                      <button
+                        onClick={() => setAuthTarget({ id: s.id, action: "delete" })}
+                        style={{
+                          padding: "3px 10px", fontSize: "0.72rem", border: "1px solid var(--hanomad-border)",
+                          borderRadius: "6px", background: "var(--hanomad-card)", color: "#e11d48", cursor: "pointer",
+                        }}
+                      >삭제</button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* User edit form */}
+              {editingId === s.id && (
+                <div style={{ marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                  <input
+                    type="text"
+                    value={editForm.title}
+                    onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+                    style={{
+                      padding: "6px 10px", fontSize: "0.85rem", border: "1px solid var(--hanomad-border)",
+                      borderRadius: "6px", background: "var(--hanomad-input-bg)", color: "var(--hanomad-text-dark)",
+                    }}
+                  />
+                  <textarea
+                    value={editForm.content}
+                    onChange={(e) => setEditForm((f) => ({ ...f, content: e.target.value }))}
+                    rows={3}
+                    style={{
+                      padding: "6px 10px", fontSize: "0.85rem", border: "1px solid var(--hanomad-border)",
+                      borderRadius: "6px", background: "var(--hanomad-input-bg)", color: "var(--hanomad-text-dark)", resize: "vertical",
+                    }}
+                  />
+                  <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end" }}>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      style={{
+                        padding: "4px 12px", fontSize: "0.78rem", border: "1px solid var(--hanomad-border)",
+                        borderRadius: "6px", background: "var(--hanomad-card)", color: "var(--hanomad-text-light)", cursor: "pointer",
+                      }}
+                    >취소</button>
+                    <button
+                      onClick={() => handleUserEdit(s.id)}
+                      style={{
+                        padding: "4px 12px", fontSize: "0.78rem", border: "none",
+                        borderRadius: "6px", background: "var(--hanomad-brown)", color: "#fff", cursor: "pointer", fontWeight: 600,
+                      }}
+                    >저장</button>
+                  </div>
+                </div>
+              )}
 
               {/* Admin actions */}
               {isAdmin && (
