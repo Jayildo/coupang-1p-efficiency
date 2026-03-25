@@ -392,14 +392,9 @@ export default function OrderWorkbench() {
         <div className="ow-card">
           <h3 className="font-semibold mb-1">1. 발주서 업로드 <span style={{ color: "var(--hanomad-accent)", fontSize: "0.75rem" }}>필수</span></h3>
           <p className="ow-text-muted mb-3" style={{ fontSize: "0.78rem" }}>서플라이어허브 &gt; 물류 &gt; 발주skulist</p>
-          <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUpload} className="file-input mb-4" />
+          <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUpload} className="file-input mb-2" />
           {data.length > 0 && (
-            <div className="mt-2">
-              <button onClick={processOrderData} disabled={loading} className="ow-btn-primary px-6 py-2">
-                {loading ? "계산 중..." : "데이터 변환 및 요약 계산"}
-              </button>
-              <p className="mt-2 ow-text-muted text-center">{message}</p>
-            </div>
+            <p className="ow-text-muted" style={{ fontSize: "0.8rem", fontWeight: 600 }}>{message}</p>
           )}
         </div>
 
@@ -471,6 +466,20 @@ export default function OrderWorkbench() {
           )}
         </div>
       </div>
+
+      {/* ── 데이터 변환 버튼 ── */}
+      {data.length > 0 && (
+        <div className="mb-6" style={{ textAlign: "center" }}>
+          <button
+            onClick={processOrderData}
+            disabled={loading}
+            className="ow-btn-primary"
+            style={{ width: "auto", padding: "12px 48px", fontSize: "1rem" }}
+          >
+            {loading ? "계산 중..." : "데이터 변환 및 요약 계산"}
+          </button>
+        </div>
+      )}
 
       {/* ── Row 2: 요약 대시보드 + 입고예정일별 발주금액 ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
