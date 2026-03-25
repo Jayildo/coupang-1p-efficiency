@@ -89,6 +89,7 @@ export default function OrderWorkbench() {
   const [transportCosts, setTransportCosts] = useState({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [uploadCollapsed, setUploadCollapsed] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [paletteCbm, setPaletteCbm] = useState(PALLET_CBM);
 
@@ -323,6 +324,7 @@ export default function OrderWorkbench() {
         totalCbm: result.reduce((s, r) => s + r.totalCbm, 0),
       });
       setMessage(`완료! (CBM 매칭: ${matchedCount}건)`);
+      setUploadCollapsed(true);
     } catch (err) {
       setMessage("오류: " + err.message);
     } finally {
@@ -386,7 +388,22 @@ export default function OrderWorkbench() {
 
   return (
     <div className="p-4">
-      {/* ── Row 1: 3 Upload Cards ── */}
+      {/* ── 업로드 영역 (접기/펼치기) ── */}
+      {uploadCollapsed && (
+        <div className="mb-4" style={{ textAlign: "right" }}>
+          <button
+            onClick={() => setUploadCollapsed(false)}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "var(--hanomad-brown)", fontSize: "0.85rem", fontWeight: 600,
+            }}
+          >
+            ▼ 업로드 영역 펼치기
+          </button>
+        </div>
+      )}
+      {!uploadCollapsed && (
+      <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* Card 1: 발주서 업로드 (필수) */}
         <div className="ow-card">
@@ -479,6 +496,8 @@ export default function OrderWorkbench() {
             {loading ? "계산 중..." : "데이터 변환 및 요약 계산"}
           </button>
         </div>
+      )}
+      </>
       )}
 
       {/* ── Row 2: 요약 대시보드 + 입고예정일별 발주금액 ── */}
