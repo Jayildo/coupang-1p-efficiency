@@ -1364,6 +1364,37 @@ h3 {
 .layout .sidebar:not(:hover) .toggle-text { width: 0; opacity: 0; }
 .layout .sidebar:hover .toggle-text { opacity: 1; transition: opacity 0.2s 0.1s; }
 
+/* Live users indicator */
+.sidebar-live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 22px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.live-text {
+  overflow: hidden;
+  transition: opacity 0.2s 0.1s;
+}
+.layout .sidebar:not(:hover) .live-text { width: 0; opacity: 0; }
+.layout .sidebar:hover .live-text { opacity: 1; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .main-content {
   flex: 1;
   padding: 28px 36px;

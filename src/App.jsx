@@ -5,6 +5,7 @@ import DocumentWorkbench from "./components/DocumentWorkbench";
 import LoadingWorkbench from "./components/LoadingWorkbench";
 import FeedbackWorkbench from "./components/FeedbackWorkbench";
 import AdBanner from "./components/AdBanner";
+import { useActiveUsers } from "./lib/useActiveUsers";
 
 const TABS = [
   {
@@ -39,6 +40,7 @@ const TABS = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("orders");
+  const activeUsers = useActiveUsers();
   const [theme, setTheme] = useState(
     () => localStorage.getItem("c1p-theme") || "light"
   );
@@ -75,6 +77,13 @@ export default function App() {
             );
           })}
         </nav>
+
+        {activeUsers !== null && (
+          <div className="sidebar-live">
+            <span className="live-dot" />
+            <span className="live-text">{activeUsers}명 접속 중</span>
+          </div>
+        )}
 
         <div className="sidebar-footer">
           <button
