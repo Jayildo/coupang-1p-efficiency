@@ -653,8 +653,8 @@ export default function LoadingWorkbench() {
     width: "297mm",
     minHeight: "210mm",
     padding: "5mm 8mm",
-    background: "var(--card-bg, #fff)",
-    border: "1px solid var(--border, #e0e0e0)",
+    background: "var(--hanomad-card)",
+    border: "1px solid var(--hanomad-border)",
     marginBottom: "16px",
     boxSizing: "border-box",
     fontSize: "11px"
@@ -664,7 +664,7 @@ export default function LoadingWorkbench() {
   return (
     <div className="workspace-stack">
       {/* Sub-tab navigation */}
-      <div style={{ display: "flex", gap: "4px", borderBottom: "2px solid var(--border, #e0e0e0)", marginBottom: "0" }}>
+      <div style={{ display: "flex", gap: "4px", borderBottom: `2px solid var(--hanomad-border)`, marginBottom: "0" }}>
         {SUB_TABS.map((tab) => (
           <button
             key={tab.id}
@@ -678,12 +678,12 @@ export default function LoadingWorkbench() {
               marginBottom: "-2px",
               borderBottom:
                 subTab === tab.id
-                  ? "2px solid var(--accent, #5D4037)"
+                  ? "2px solid var(--hanomad-brown)"
                   : "2px solid transparent",
               color:
                 subTab === tab.id
-                  ? "var(--accent, #5D4037)"
-                  : "var(--text-muted, #8D6E63)",
+                  ? "var(--hanomad-brown)"
+                  : "var(--hanomad-text-light)",
               fontWeight: subTab === tab.id ? "600" : "400"
             }}
           >
@@ -735,7 +735,7 @@ export default function LoadingWorkbench() {
           </div>
 
           {message && (
-            <div style={{ padding: "8px 12px", background: "var(--accent-light, #fdf6f0)", borderRadius: "6px", fontSize: "13px", color: "var(--accent, #5D4037)", marginBottom: "8px" }}>
+            <div style={{ padding: "8px 12px", background: "color-mix(in srgb, var(--hanomad-brown) 8%, transparent)", borderRadius: "6px", fontSize: "13px", color: "var(--hanomad-brown)", marginBottom: "8px" }}>
               {message}
             </div>
           )}
@@ -747,7 +747,7 @@ export default function LoadingWorkbench() {
             </div>
           ) : (
             <>
-              <div style={{ fontSize: "13px", color: "var(--text-muted, #888)", marginBottom: "8px" }}>
+              <div style={{ fontSize: "13px", color: "var(--hanomad-text-light)", marginBottom: "8px" }}>
                 집계 결과: {filteredAggregated.length} / {aggregated.length}개 품목
               </div>
               <div className="table-wrap">
@@ -789,7 +789,7 @@ export default function LoadingWorkbench() {
                                 <button
                                   title="쪼개기"
                                   onClick={() => { splitPerBoxRef.current = ""; setSplitPromptIdx(i); }}
-                                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--accent, #795548)", padding: "2px 4px" }}
+                                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--hanomad-brown)", padding: "2px 4px" }}
                                 >
                                   <Scissors size={14} />
                                 </button>
@@ -849,7 +849,7 @@ export default function LoadingWorkbench() {
 
                           {/* Split prompt row */}
                           {splitPromptIdx === i && (
-                            <tr key={`split-prompt-${i}`} style={{ background: "var(--row-stripe, #fafafa)" }}>
+                            <tr key={`split-prompt-${i}`} style={{ background: "var(--hanomad-cream)" }}>
                               <td colSpan={9} style={{ padding: "8px 12px" }}>
                                 <span style={{ fontSize: "13px", marginRight: "8px" }}>
                                   박스당 수량 (총 {row.qty.toLocaleString()}개):
@@ -892,7 +892,7 @@ export default function LoadingWorkbench() {
                                 >
                                   취소
                                 </button>
-                                <span className="split-info" style={{ fontSize: "12px", marginLeft: "10px", color: "var(--text-muted, #888)" }}>→ ?행 생성</span>
+                                <span className="split-info" style={{ fontSize: "12px", marginLeft: "10px", color: "var(--hanomad-text-light)" }}>→ ?행 생성</span>
                               </td>
                             </tr>
                           )}
@@ -900,12 +900,12 @@ export default function LoadingWorkbench() {
                           {/* Split child rows */}
                           {isSplit &&
                             splits[i].map((s, si) => (
-                              <tr key={s.key} style={{ background: "var(--row-stripe, #fafafa)" }}>
-                                <td style={{ textAlign: "center", fontSize: "11px", color: "#92400e" }}></td>
-                                <td style={{ textAlign: "center", fontSize: "12px", color: "#92400e", paddingLeft: "16px" }}>↳ {row.sku}</td>
-                                <td style={{ textAlign: "center", fontSize: "12px", color: "#92400e" }}>{row.barcode}</td>
-                                <td style={{ fontSize: "12px", color: "#92400e", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</td>
-                                <td style={{ textAlign: "center", fontSize: "12px", color: "#92400e" }}>{row.center}</td>
+                              <tr key={s.key} style={{ background: "var(--hanomad-cream)" }}>
+                                <td style={{ textAlign: "center", fontSize: "11px", color: "var(--hanomad-text-light)" }}></td>
+                                <td style={{ textAlign: "center", fontSize: "12px", color: "var(--hanomad-accent)", paddingLeft: "16px" }}>↳ {row.sku}</td>
+                                <td style={{ textAlign: "center", fontSize: "12px", color: "var(--hanomad-accent)" }}>{row.barcode}</td>
+                                <td style={{ fontSize: "12px", color: "var(--hanomad-accent)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.name}</td>
+                                <td style={{ textAlign: "center", fontSize: "12px", color: "var(--hanomad-accent)" }}>{row.center}</td>
                                 <td></td>
                                 <td style={{ textAlign: "center", padding: "3px 4px" }}>
                                   <input
@@ -960,7 +960,7 @@ export default function LoadingWorkbench() {
                   </button>
                 </div>
               )}
-              <p style={{ fontSize: "12px", color: "var(--text-muted, #888)", marginTop: "8px" }}>
+              <p style={{ fontSize: "12px", color: "var(--hanomad-text-light)", marginTop: "8px" }}>
                 박스/팔레트 번호 입력 후 상단의 <b>팔레트</b> 또는 <b>박스</b> 탭에서 적재리스트를 확인하세요.
               </p>
             </>
@@ -1106,7 +1106,7 @@ export default function LoadingWorkbench() {
                           </tbody>
                         </table>
                         {palletPages.length > 1 && (
-                          <div style={{ textAlign: "right", fontSize: "10px", color: "#6b7280", marginTop: "4px" }}>
+                          <div style={{ textAlign: "right", fontSize: "10px", color: "var(--hanomad-text-light)", marginTop: "4px" }}>
                             Page {pi + 1} / {palletPages.length}
                           </div>
                         )}
@@ -1234,7 +1234,7 @@ export default function LoadingWorkbench() {
                         </tbody>
                       </table>
                       {boxPages.length > 1 && (
-                        <div style={{ textAlign: "right", fontSize: "10px", color: "#6b7280", marginTop: "4px" }}>
+                        <div style={{ textAlign: "right", fontSize: "10px", color: "var(--hanomad-text-light)", marginTop: "4px" }}>
                           Page {pi + 1} / {boxPages.length}
                         </div>
                       )}

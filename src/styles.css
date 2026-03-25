@@ -3,16 +3,29 @@
 /* ── Design Tokens ──────────────────────── */
 :root {
   color-scheme: light;
-  --bg: #efe7dc;
-  --panel: rgba(255, 250, 244, 0.85);
-  --ink: #221812;
-  --muted: #6b5e53;
-  --line: rgba(55, 38, 25, 0.1);
-  --accent: #9b5d33;
-  --accent-dark: #50331f;
-  --accent-soft: rgba(155, 93, 51, 0.12);
-  --forest: #274f46;
-  --shadow: 0 24px 70px rgba(63, 45, 30, 0.1);
+
+  /* ── Deep Forest Theme ──────────────────── */
+  --hanomad-bg: #f0f4f3;
+  --hanomad-cream: #edf3f1;
+  --hanomad-brown: #2d6a5a;
+  --hanomad-card: #ffffff;
+  --hanomad-accent: #5eae9e;
+  --hanomad-text-dark: #2d4a44;
+  --hanomad-text-light: #5a7a72;
+  --hanomad-border: #d4e0dc;
+  --hanomad-input-bg: #f5f9f8;
+
+  /* ── Legacy aliases → Deep Forest ──────── */
+  --bg: var(--hanomad-bg);
+  --panel: var(--hanomad-card);
+  --ink: var(--hanomad-text-dark);
+  --muted: var(--hanomad-text-light);
+  --line: var(--hanomad-border);
+  --accent: var(--hanomad-brown);
+  --accent-dark: #1e4d3f;
+  --accent-soft: color-mix(in srgb, var(--hanomad-brown) 12%, transparent);
+  --forest: var(--hanomad-brown);
+  --shadow: 0 24px 70px rgba(45, 74, 68, 0.1);
   --radius-xl: 32px;
   --radius-lg: 24px;
   --radius-md: 18px;
@@ -26,7 +39,7 @@
   --sp-xl: 32px;
 
   /* Border alias */
-  --border: rgba(55, 38, 25, 0.1);
+  --border: var(--hanomad-border);
 }
 
 /* ── Reset ──────────────────────────────── */
@@ -49,9 +62,9 @@ body {
   color: var(--ink);
   word-break: keep-all;
   background:
-    radial-gradient(circle at top left, rgba(155, 93, 51, 0.14), transparent 28%),
-    radial-gradient(circle at top right, rgba(39, 79, 70, 0.14), transparent 22%),
-    linear-gradient(180deg, #f8f2ea 0%, var(--bg) 100%);
+    radial-gradient(circle at top left, color-mix(in srgb, var(--hanomad-brown) 14%, transparent), transparent 28%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--hanomad-accent) 14%, transparent), transparent 22%),
+    linear-gradient(180deg, var(--hanomad-cream) 0%, var(--hanomad-bg) 100%);
 }
 
 button,
@@ -131,7 +144,7 @@ h3 {
   font-size: 22px;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+  background: linear-gradient(135deg, var(--hanomad-brown), var(--hanomad-accent));
 }
 
 .brand-kicker,
@@ -163,8 +176,8 @@ h3 {
 
 .nav-item:hover:not(.active) {
   background: rgba(255, 255, 255, 0.82);
-  border-color: rgba(155, 93, 51, 0.2);
-  box-shadow: 0 2px 8px rgba(63, 45, 30, 0.06);
+  border-color: color-mix(in srgb, var(--hanomad-brown) 20%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--hanomad-text-dark) 6%, transparent);
 }
 
 .nav-item strong,
@@ -190,18 +203,18 @@ h3 {
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #2b1e15, #5f3c26);
+  background: linear-gradient(135deg, var(--hanomad-brown), var(--hanomad-accent));
   border-color: transparent;
-  color: #fff8f2;
-  box-shadow: 0 4px 14px rgba(80, 51, 31, 0.35);
+  color: #fff;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--hanomad-brown) 35%, transparent);
 }
 
 .nav-item.active strong {
-  color: #fff8f2;
+  color: #fff;
 }
 
 .nav-item.active span {
-  color: rgba(255, 248, 242, 0.72);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 /* ── Muted text selector (consolidated) ── */
@@ -277,8 +290,8 @@ h3 {
   gap: 8px;
   padding: 9px 12px;
   border-radius: 999px;
-  background: rgba(39, 79, 70, 0.09);
-  color: var(--forest);
+  background: color-mix(in srgb, var(--hanomad-brown) 9%, transparent);
+  color: var(--hanomad-brown);
   font-size: 13px;
   font-weight: 700;
 }
@@ -314,14 +327,14 @@ h3 {
 }
 
 .primary-button {
-  background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+  background: linear-gradient(135deg, var(--hanomad-brown), var(--hanomad-accent));
   color: white;
-  box-shadow: 0 4px 12px rgba(155, 93, 51, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--hanomad-brown) 30%, transparent);
 }
 
 .primary-button:hover {
   filter: brightness(1.08);
-  box-shadow: 0 6px 18px rgba(155, 93, 51, 0.4);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--hanomad-brown) 40%, transparent);
 }
 
 .primary-button:active {
@@ -351,7 +364,7 @@ h3 {
 .table-button:hover,
 .token-button:hover {
   background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(155, 93, 51, 0.25);
+  border-color: color-mix(in srgb, var(--hanomad-brown) 25%, transparent);
 }
 
 .secondary-button:active,
@@ -464,8 +477,8 @@ h3 {
 .table-chip {
   border-radius: 999px;
   padding: 7px 12px;
-  background: rgba(39, 79, 70, 0.08);
-  color: var(--forest);
+  background: color-mix(in srgb, var(--hanomad-brown) 8%, transparent);
+  color: var(--hanomad-brown);
   font-size: 12px;
   font-weight: 700;
 }
@@ -497,7 +510,7 @@ h3 {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  background: rgba(239, 231, 220, 0.6);
+  background: color-mix(in srgb, var(--hanomad-cream) 60%, transparent);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -508,7 +521,7 @@ h3 {
 }
 
 .data-table tbody tr:hover {
-  background: rgba(155, 93, 51, 0.05);
+  background: color-mix(in srgb, var(--hanomad-brown) 5%, transparent);
 }
 
 /* ── Empty State ────────────────────────── */
@@ -528,11 +541,11 @@ h3 {
   display: flex;
   align-items: center;
   gap: 16px;
-  border: 1px dashed rgba(155, 93, 51, 0.28);
+  border: 1px dashed color-mix(in srgb, var(--hanomad-brown) 28%, transparent);
 }
 
 .dropzone.active {
-  background: rgba(155, 93, 51, 0.1);
+  background: color-mix(in srgb, var(--hanomad-brown) 10%, transparent);
 }
 
 /* ── Form Controls ──────────────────────── */
@@ -834,8 +847,8 @@ h3 {
 .suggestion-card .category-badge {
   padding: 2px 10px;
   border-radius: var(--radius-lg);
-  background: rgba(155, 93, 51, 0.1);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--hanomad-brown) 10%, transparent);
+  color: var(--hanomad-brown);
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
@@ -883,9 +896,9 @@ h3 {
 }
 
 .reaction-btn.active {
-  background: rgba(155, 93, 51, 0.12);
-  border-color: var(--accent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--hanomad-brown) 12%, transparent);
+  border-color: var(--hanomad-brown);
+  color: var(--hanomad-brown);
 }
 
 /* ── Ad Banner ──────────────────────────── */
@@ -1061,6 +1074,48 @@ h3 {
   transition: background 0.15s;
 }
 .ow-table tbody tr:hover { background: var(--hanomad-cream); }
+
+/* ── Feedback Workbench Buttons ─────────── */
+.btn-primary {
+  background: var(--hanomad-brown);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: filter 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--hanomad-brown) 25%, transparent);
+}
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; filter: none; box-shadow: none; }
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--hanomad-text-dark);
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--hanomad-border);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.18s, border-color 0.18s;
+  white-space: nowrap;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: color-mix(in srgb, var(--hanomad-brown) 25%, transparent);
+}
+.btn-secondary:active { transform: scale(0.97); }
 
 .ow-date-cell {
   font-weight: 700;

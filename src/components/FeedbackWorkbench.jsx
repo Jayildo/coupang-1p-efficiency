@@ -302,7 +302,7 @@ export default function FeedbackWorkbench() {
               cursor: "pointer",
               fontSize: "0.85rem",
               fontWeight: activeCategory === cat ? 700 : 400,
-              background: activeCategory === cat ? "var(--accent, #9b5d33)" : "rgba(255,255,255,0.1)",
+              background: activeCategory === cat ? "var(--hanomad-brown)" : "rgba(255,255,255,0.1)",
               color: activeCategory === cat ? "#fff" : "inherit",
               transition: "background 0.15s",
             }}
@@ -342,8 +342,8 @@ export default function FeedbackWorkbench() {
                     fontSize: "0.72rem",
                     padding: "0.15rem 0.55rem",
                     borderRadius: "999px",
-                    background: "var(--accent-soft, rgba(155,93,51,0.12))",
-                    color: "var(--accent, #9b5d33)",
+                    background: "color-mix(in srgb, var(--hanomad-brown) 12%, transparent)",
+                    color: "var(--hanomad-brown)",
                     whiteSpace: "nowrap",
                     fontWeight: 600,
                   }}
@@ -396,10 +396,10 @@ export default function FeedbackWorkbench() {
                           padding: "0.2rem 0.6rem",
                           borderRadius: "999px",
                           border: active
-                            ? "1.5px solid var(--accent, #9b5d33)"
-                            : "1.5px solid var(--line, rgba(55,38,25,0.1))",
+                            ? "1.5px solid var(--hanomad-brown)"
+                            : "1.5px solid var(--hanomad-border)",
                           background: active
-                            ? "var(--accent-soft, rgba(155,93,51,0.12))"
+                            ? "color-mix(in srgb, var(--hanomad-brown) 12%, transparent)"
                             : "transparent",
                           cursor: "pointer",
                           fontSize: "0.82rem",
