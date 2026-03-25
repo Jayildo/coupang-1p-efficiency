@@ -8,11 +8,18 @@
       name="description"
       content="쿠팡 1p 셀러를 위한 발주서 정리, 거래명세서 처리, 적재리스트 관리 워크스페이스"
     />
-    <!-- Google AdSense -->
-    <!-- TODO: Replace ca-pub-XXXXXXXXXX with your real AdSense publisher ID -->
+    <!-- Google AdSense — TODO: ca-pub-XXXXXXXXXX를 실제 퍼블리셔 ID로 교체 -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
       crossorigin="anonymous"
       data-ad-client="ca-pub-XXXXXXXXXX"></script>
+    <!-- Google Analytics (GA4) — TODO: G-XXXXXXXXXX를 실제 측정 ID로 교체 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -4,6 +4,7 @@ import OrderWorkbench from "./components/OrderWorkbench";
 import DocumentWorkbench from "./components/DocumentWorkbench";
 import LoadingWorkbench from "./components/LoadingWorkbench";
 import FeedbackWorkbench from "./components/FeedbackWorkbench";
+import AdBanner from "./components/AdBanner";
 
 const TABS = [
   {
@@ -92,10 +93,12 @@ export default function App() {
       <main className="main-content">
         <h1 className="page-title">{TABS.find((t) => t.id === activeTab)?.label}</h1>
         <p className="page-desc">{TABS.find((t) => t.id === activeTab)?.detail}</p>
+        <AdBanner slot="top-banner" format="horizontal" style={{ marginBottom: 16 }} />
         {activeTab === "orders" && <OrderWorkbench />}
         {activeTab === "documents" && <DocumentWorkbench />}
         {activeTab === "loading" && <LoadingWorkbench />}
         {activeTab === "feedback" && <FeedbackWorkbench />}
+        <AdBanner slot="bottom-banner" format="horizontal" style={{ marginTop: 24 }} />
       </main>
     </div>
   );
