@@ -414,9 +414,6 @@ export default function OrderWorkbench() {
               {skuMessage}
             </p>
           )}
-          {!skuMessage && (
-            <p className="ow-text-placeholder" style={{ fontSize: "0.8rem" }}>업로드 시 Supabase보다 우선 적용됩니다.</p>
-          )}
         </div>
 
         {/* Card 3: 밀크런 비용 입력 — 엑셀 복사/붙여넣기 방식 (선택) */}
