@@ -127,8 +127,11 @@ export default function App() {
               <p style={{ marginBottom: "12px" }}>
                 그래서 만들어 공유합니다.
               </p>
-              <p style={{ marginBottom: "24px", color: "var(--hanomad-text-light)" }}>
+              <p style={{ marginBottom: "12px" }}>
                 발주서 정리, 거래명세서 추출, 적재리스트 작성 — 매일 반복하는 일들을 조금이라도 줄여보세요.
+              </p>
+              <p style={{ marginBottom: "24px", color: "var(--hanomad-text-light)", fontSize: "0.85rem" }}>
+                업로드하신 데이터는 서버에 저장되지 않으며, 브라우저에서만 처리됩니다. 건의함에 남긴 내용만 저장됩니다.
               </p>
             </div>
 
