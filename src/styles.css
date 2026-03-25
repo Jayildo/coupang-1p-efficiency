@@ -923,11 +923,20 @@ h3 {
 .page-title {
   font-size: 1.3rem;
   font-weight: 700;
-  margin: 0 0 16px;
+  margin: 0 0 4px;
   color: var(--hanomad-text-dark, #4E342E);
+}
+.page-desc {
+  font-size: 0.85rem;
+  color: var(--hanomad-text-light, #795548);
+  margin: 0 0 20px;
+  line-height: 1.5;
 }
 [data-theme="dark"] .page-title {
   color: var(--hanomad-text-dark, #E8DDD5);
+}
+[data-theme="dark"] .page-desc {
+  color: var(--hanomad-text-light, #BCAAA4);
 }
 
 /* ══════════════════════════════════════════
