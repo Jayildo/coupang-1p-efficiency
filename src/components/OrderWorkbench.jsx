@@ -96,8 +96,10 @@ export default function OrderWorkbench() {
   const [localCbmMap, setLocalCbmMap] = useState({});
   const [skuMessage, setSkuMessage] = useState("");
 
-  // 밀크런 비용 입력 state
+  // 밀크런 비용 입력 state (원본 MilkRunTab 방식: textarea 붙여넣기 → 파싱)
+  const [milkRunText, setMilkRunText] = useState("");
   const [localCostRows, setLocalCostRows] = useState([]);
+  const [milkRunMessage, setMilkRunMessage] = useState("");
 
   const handleUpload = (e) => {
     const file = e.target.files?.[0];
@@ -156,18 +158,46 @@ export default function OrderWorkbench() {
     reader.readAsArrayBuffer(file);
   };
 
-  const addCostRow = () => {
-    setLocalCostRows((prev) => [...prev, { id: crypto.randomUUID(), center: "", cost: 0 }]);
-  };
-
-  const updateCostRow = (id, field, value) => {
-    setLocalCostRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
-    );
-  };
-
-  const deleteCostRow = (id) => {
-    setLocalCostRows((prev) => prev.filter((r) => r.id !== id));
+  const parseMilkRunData = () => {
+    if (!milkRunText.trim()) {
+      setMilkRunMessage("데이터를 입력해주세요.");
+      return;
+    }
+    try {
+      const lines = milkRunText.trim().split("\n").map((l) => l.split("\t"));
+      let headerIdx = -1, costIdx = -1;
+      for (let i = 0; i < lines.length; i++) {
+        const joined = lines[i].join("");
+        if (joined.includes("출고지명") || joined.includes("안성4(14)")) headerIdx = i;
+        if (joined.includes("BASIC(1pt 당)") || joined.includes("계산단위")) costIdx = i;
+      }
+      if (headerIdx === -1 || costIdx === -1) {
+        setMilkRunMessage('"출고지명" 행과 "BASIC(1pt 당)" 행이 필요합니다.');
+        return;
+      }
+      const headerRow = lines[headerIdx];
+      const costRow = lines[costIdx];
+      const ignore = ["출고지명", "출고지 주소", "계산단위", "이용요금", ""];
+      const centers = headerRow
+        .map((v, i) => ({ val: v.trim(), i }))
+        .filter((x) => x.val && !ignore.includes(x.val) && !x.val.includes("이용요금"));
+      let costStart = costRow.findIndex((c) => c.includes("BASIC(1pt 당)"));
+      if (costStart === -1) costStart = costRow.findIndex((c) => c.includes("계산단위"));
+      if (costStart === -1) { setMilkRunMessage("비용 행을 찾을 수 없습니다."); return; }
+      const costValues = costRow.slice(costStart + 1).map((c) => c.trim());
+      const results = [];
+      const count = Math.min(centers.length, costValues.length);
+      for (let i = 0; i < count; i++) {
+        const cost = parseFloat(costValues[i]?.replace(/,/g, ""));
+        if (isNaN(cost)) continue;
+        const cleanName = centers[i].val.split("(")[0].trim();
+        results.push({ center_raw: centers[i].val, center_clean: cleanName, cost_per_pallet: cost });
+      }
+      setLocalCostRows(results);
+      setMilkRunMessage(`${results.length}개 센터 추출 완료`);
+    } catch (e) {
+      setMilkRunMessage("파싱 오류: " + e.message);
+    }
   };
 
   const processOrderData = async () => {
@@ -180,8 +210,8 @@ export default function OrderWorkbench() {
     const supabaseCosts = await fetchTransportCosts();
     const localCostMap = {};
     localCostRows.forEach((r) => {
-      const key = r.center.replace(/\s+/g, "");
-      if (key && r.cost > 0) localCostMap[key] = Number(r.cost);
+      const key = (r.center_clean || "").replace(/\s+/g, "");
+      if (key && r.cost_per_pallet > 0) localCostMap[key] = r.cost_per_pallet;
     });
     const mergedCostMap = { ...supabaseCosts, ...localCostMap };
     setTransportCosts(mergedCostMap);
@@ -302,15 +332,6 @@ export default function OrderWorkbench() {
 
   // ── Render ───────────────────────────────────────────────────────────
 
-  const inputStyle = {
-    padding: "6px 10px",
-    border: "1px solid var(--hanomad-border)",
-    borderRadius: "6px",
-    background: "var(--hanomad-input-bg)",
-    color: "var(--hanomad-text-dark)",
-    fontSize: "0.85rem",
-  };
-
   return (
     <div className="p-4">
       {/* ── Row 1: 3 Upload Cards ── */}
@@ -345,70 +366,52 @@ export default function OrderWorkbench() {
           )}
         </div>
 
-        {/* Card 3: 밀크런 비용 입력 (선택) */}
+        {/* Card 3: 밀크런 비용 입력 — 엑셀 복사/붙여넣기 방식 (선택) */}
         <div className="ow-card">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold">3. 밀크런 비용 입력 <span className="ow-text-muted" style={{ fontSize: "0.75rem" }}>선택</span></h3>
+          <h3 className="font-semibold mb-2">3. 밀크런 비용 입력 <span className="ow-text-muted" style={{ fontSize: "0.75rem" }}>선택</span></h3>
+          <p className="ow-text-muted" style={{ fontSize: "0.78rem", marginBottom: "8px" }}>
+            쿠팡 서플라이어 허브 &gt; 물류 &gt; 밀크런 화면에서 표 영역을 복사해 붙여넣기
+          </p>
+          <textarea
+            value={milkRunText}
+            onChange={(e) => setMilkRunText(e.target.value)}
+            placeholder={"출고지명\t주소\t계산단위\t안성4(14)\t...\n...\tBASIC(1pt 당)\t46,100\t..."}
+            style={{
+              width: "100%", minHeight: "80px", padding: "8px", fontSize: "0.78rem",
+              fontFamily: "monospace", border: "1px solid var(--hanomad-border)",
+              borderRadius: "6px", background: "var(--hanomad-input-bg)",
+              color: "var(--hanomad-text-dark)", resize: "vertical",
+            }}
+          />
+          <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
+            <button onClick={parseMilkRunData} className="ow-btn-primary" style={{ width: "auto", padding: "6px 14px", fontSize: "0.8rem" }}>
+              데이터 변환
+            </button>
             <button
-              onClick={addCostRow}
-              className="ow-btn-primary"
-              style={{ padding: "4px 10px", fontSize: "0.8rem" }}
+              onClick={() => { setMilkRunText(""); setLocalCostRows([]); setMilkRunMessage(""); }}
+              style={{
+                padding: "6px 14px", fontSize: "0.8rem", borderRadius: "6px", border: "1px solid var(--hanomad-border)",
+                background: "var(--hanomad-cream)", color: "var(--hanomad-text-light)", cursor: "pointer",
+              }}
             >
-              행 추가
+              초기화
             </button>
           </div>
-          {localCostRows.length === 0 ? (
-            <p className="ow-text-placeholder" style={{ fontSize: "0.8rem" }}>
-              행을 추가해 센터별 팔레트 비용을 입력하세요.<br />Supabase 데이터보다 우선 적용됩니다.
-            </p>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+          {milkRunMessage && <p className="ow-text-muted" style={{ marginTop: "6px", fontSize: "0.8rem", fontWeight: 600 }}>{milkRunMessage}</p>}
+          {localCostRows.length > 0 && (
+            <div style={{ overflowX: "auto", marginTop: "8px", maxHeight: "160px", overflowY: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
                 <thead>
                   <tr>
-                    <th className="ow-text-muted" style={{ textAlign: "left", padding: "4px 6px", fontWeight: 600, fontSize: "0.78rem" }}>센터명</th>
-                    <th className="ow-text-muted" style={{ textAlign: "right", padding: "4px 6px", fontWeight: 600, fontSize: "0.78rem" }}>팔레트당 비용</th>
-                    <th style={{ width: "28px" }}></th>
+                    <th className="ow-text-muted" style={{ textAlign: "left", padding: "4px 6px", fontWeight: 600 }}>센터명</th>
+                    <th className="ow-text-muted" style={{ textAlign: "right", padding: "4px 6px", fontWeight: 600 }}>팔레트당 단가</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {localCostRows.map((row) => (
-                    <tr key={row.id}>
-                      <td style={{ padding: "3px 4px" }}>
-                        <input
-                          type="text"
-                          value={row.center}
-                          onChange={(e) => updateCostRow(row.id, "center", e.target.value)}
-                          placeholder="센터명"
-                          style={{ ...inputStyle, width: "100%" }}
-                        />
-                      </td>
-                      <td style={{ padding: "3px 4px" }}>
-                        <input
-                          type="number"
-                          value={row.cost || ""}
-                          onChange={(e) => updateCostRow(row.id, "cost", parseFloat(e.target.value) || 0)}
-                          placeholder="0"
-                          style={{ ...inputStyle, width: "100%", textAlign: "right" }}
-                        />
-                      </td>
-                      <td style={{ padding: "3px 4px", textAlign: "center" }}>
-                        <button
-                          onClick={() => deleteCostRow(row.id)}
-                          title="삭제"
-                          style={{
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            color: "var(--hanomad-accent)",
-                            fontSize: "1rem",
-                            lineHeight: 1,
-                            padding: "2px 4px",
-                          }}
-                        >
-                          ×
-                        </button>
-                      </td>
+                  {localCostRows.map((row, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid var(--hanomad-border)" }}>
+                      <td style={{ padding: "3px 6px", color: "var(--hanomad-brown)", fontWeight: 500 }}>{row.center_clean}</td>
+                      <td style={{ padding: "3px 6px", textAlign: "right", fontFamily: "monospace" }}>{row.cost_per_pallet.toLocaleString()}원</td>
                     </tr>
                   ))}
                 </tbody>
