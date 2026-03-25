@@ -36,7 +36,8 @@ async function fetchCbmMap(barcodes) {
       .in("바코드", batch);
 
     if (error) {
-      throw error;
+      console.warn("skulist 조회 실패 (테이블 미존재 가능):", error.message);
+      return result;
     }
 
     (data || []).forEach((row) => {
@@ -60,7 +61,8 @@ async function fetchTransportCosts() {
     .select("center_clean, cost_per_pallet");
 
   if (error) {
-    throw error;
+    console.warn("milk_run_costs 조회 실패 (테이블 미존재 가능):", error.message);
+    return {};
   }
 
   const result = {};
