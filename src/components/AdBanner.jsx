@@ -19,7 +19,7 @@ export default function AdBanner({ slot = "", format = "auto", style = {} }) {
   const adClient = import.meta.env.VITE_GOOGLE_ADSENSE_ID || "ca-pub-XXXXXXXXXX";
 
   return (
-    <div style={{ textAlign: "center", margin: "16px 0", ...style }}>
+    <div style={{ textAlign: "center", margin: "8px 0", minHeight: 0, ...style }}>
       <ins
         className="adsbygoogle"
         ref={adRef}

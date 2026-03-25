@@ -1452,7 +1452,7 @@ h3 {
 
 .main-content {
   flex: 1;
-  padding: 28px 36px;
+  padding: 20px 36px;
   overflow-y: auto;
   background: var(--hanomad-bg);
 }
