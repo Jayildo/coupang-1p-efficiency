@@ -92,6 +92,13 @@ export default function OrderWorkbench() {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [paletteCbm, setPaletteCbm] = useState(PALLET_CBM);
 
+  // SKU 정보 업로드 state
+  const [localCbmMap, setLocalCbmMap] = useState({});
+  const [skuMessage, setSkuMessage] = useState("");
+
+  // 밀크런 비용 입력 state
+  const [localCostRows, setLocalCostRows] = useState([]);
+
   const handleUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -107,20 +114,86 @@ export default function OrderWorkbench() {
     reader.readAsArrayBuffer(file);
   };
 
+  const handleSkuUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const wb = read(ev.target.result, { type: "array" });
+        const jsonData = utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+        if (jsonData.length === 0) { setSkuMessage("데이터 없음"); return; }
+
+        const firstRow = jsonData[0];
+        const cols = Object.keys(firstRow);
+
+        const barcodeAliases = ["바코드", "barcode", "Barcode", "code", "SKU Barcode", "sku barcode"];
+        const cbmAliases = ["cbm", "CBM", "Cbm", "씨비엠"];
+
+        const barcodeCol = barcodeAliases.find((k) => cols.includes(k))
+          || cols.find((c) => c.toLowerCase().includes("barcode") || c.toLowerCase().includes("바코드"));
+        const cbmCol = cbmAliases.find((k) => cols.includes(k))
+          || cols.find((c) => c.toLowerCase().includes("cbm"));
+
+        if (!barcodeCol || !cbmCol) {
+          setSkuMessage("바코드/CBM 컬럼을 찾을 수 없습니다");
+          return;
+        }
+
+        const map = {};
+        jsonData.forEach((row) => {
+          const barcode = String(row[barcodeCol] || "").trim();
+          const cbm = parseFloat(row[cbmCol]) || 0;
+          if (barcode) map[barcode] = cbm;
+        });
+
+        setLocalCbmMap(map);
+        setSkuMessage(`${Object.keys(map).length.toLocaleString()}건 로드됨`);
+      } catch (err) {
+        setSkuMessage("파일 읽기 오류: " + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const addCostRow = () => {
+    setLocalCostRows((prev) => [...prev, { id: crypto.randomUUID(), center: "", cost: 0 }]);
+  };
+
+  const updateCostRow = (id, field, value) => {
+    setLocalCostRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+    );
+  };
+
+  const deleteCostRow = (id) => {
+    setLocalCostRows((prev) => prev.filter((r) => r.id !== id));
+  };
+
   const processOrderData = async () => {
     if (data.length === 0) return;
     setLoading(true);
     setMessage("처리 중...");
     setSelectedGroup(null);
 
-    const costMap = await fetchTransportCosts();
-    setTransportCosts(costMap);
+    // Costs: local takes priority over Supabase
+    const supabaseCosts = await fetchTransportCosts();
+    const localCostMap = {};
+    localCostRows.forEach((r) => {
+      const key = r.center.replace(/\s+/g, "");
+      if (key && r.cost > 0) localCostMap[key] = Number(r.cost);
+    });
+    const mergedCostMap = { ...supabaseCosts, ...localCostMap };
+    setTransportCosts(mergedCostMap);
 
     const norm = (v) => (v ? String(v).trim() : "");
     const barcodes = [...new Set(
       data.map((r) => norm(r["바코드"] || r["Barcode"] || r["barcode"] || r["code"] || r["SKU Barcode"] || r["sku barcode"])).filter(Boolean)
     )];
-    const cbmMap = await fetchCbmData(barcodes);
+
+    // CBM: local takes priority over Supabase
+    const supabaseCbm = await fetchCbmData(barcodes);
+    const mergedCbmMap = { ...supabaseCbm, ...localCbmMap };
     let matchedCount = 0;
 
     try {
@@ -143,7 +216,7 @@ export default function OrderWorkbench() {
         }
 
         const barcode = norm(getVal(row, ["바코드", "Barcode", "barcode", "code", "SKU Barcode", "sku barcode"]));
-        const itemCbm = cbmMap[barcode];
+        const itemCbm = mergedCbmMap[barcode];
         let rowCbm = 0;
         if (itemCbm !== undefined) { matchedCount++; rowCbm = qty * itemCbm; }
 
@@ -229,13 +302,22 @@ export default function OrderWorkbench() {
 
   // ── Render ───────────────────────────────────────────────────────────
 
+  const inputStyle = {
+    padding: "6px 10px",
+    border: "1px solid var(--hanomad-border)",
+    borderRadius: "6px",
+    background: "var(--hanomad-input-bg)",
+    color: "var(--hanomad-text-dark)",
+    fontSize: "0.85rem",
+  };
+
   return (
     <div className="p-4">
-      {/* ── 3-Column Cards ── */}
+      {/* ── Row 1: 3 Upload Cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        {/* Card 1: 파일 업로드 */}
+        {/* Card 1: 발주서 업로드 (필수) */}
         <div className="ow-card">
-          <h3 className="font-semibold mb-2">1. 발주서 파일 업로드</h3>
+          <h3 className="font-semibold mb-1">1. 발주서 업로드 <span style={{ color: "var(--hanomad-accent)", fontSize: "0.75rem" }}>필수</span></h3>
           <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUpload} className="file-input mb-4" />
           {data.length > 0 && (
             <div className="mt-2">
@@ -247,7 +329,98 @@ export default function OrderWorkbench() {
           )}
         </div>
 
-        {/* Card 2: 요약 대시보드 */}
+        {/* Card 2: SKU 정보 업로드 (선택) */}
+        <div className="ow-card">
+          <h3 className="font-semibold mb-1">2. SKU 정보 업로드 <span className="ow-text-muted" style={{ fontSize: "0.75rem" }}>선택</span></h3>
+          <p className="ow-text-muted mb-3" style={{ fontSize: "0.8rem" }}>바코드 + CBM 컬럼이 있는 Excel 파일</p>
+          <input type="file" accept=".xlsx,.xls,.csv" onChange={handleSkuUpload} className="file-input mb-3" />
+          {skuMessage && (
+            <p className={`text-sm mt-1 ${skuMessage.includes("오류") || skuMessage.includes("없습") ? "ow-text-muted" : "ow-text-secondary"}`}
+              style={{ fontWeight: skuMessage.includes("건") ? 600 : 400 }}>
+              {skuMessage}
+            </p>
+          )}
+          {!skuMessage && (
+            <p className="ow-text-placeholder" style={{ fontSize: "0.8rem" }}>업로드 시 Supabase보다 우선 적용됩니다.</p>
+          )}
+        </div>
+
+        {/* Card 3: 밀크런 비용 입력 (선택) */}
+        <div className="ow-card">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold">3. 밀크런 비용 입력 <span className="ow-text-muted" style={{ fontSize: "0.75rem" }}>선택</span></h3>
+            <button
+              onClick={addCostRow}
+              className="ow-btn-primary"
+              style={{ padding: "4px 10px", fontSize: "0.8rem" }}
+            >
+              행 추가
+            </button>
+          </div>
+          {localCostRows.length === 0 ? (
+            <p className="ow-text-placeholder" style={{ fontSize: "0.8rem" }}>
+              행을 추가해 센터별 팔레트 비용을 입력하세요.<br />Supabase 데이터보다 우선 적용됩니다.
+            </p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                <thead>
+                  <tr>
+                    <th className="ow-text-muted" style={{ textAlign: "left", padding: "4px 6px", fontWeight: 600, fontSize: "0.78rem" }}>센터명</th>
+                    <th className="ow-text-muted" style={{ textAlign: "right", padding: "4px 6px", fontWeight: 600, fontSize: "0.78rem" }}>팔레트당 비용</th>
+                    <th style={{ width: "28px" }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {localCostRows.map((row) => (
+                    <tr key={row.id}>
+                      <td style={{ padding: "3px 4px" }}>
+                        <input
+                          type="text"
+                          value={row.center}
+                          onChange={(e) => updateCostRow(row.id, "center", e.target.value)}
+                          placeholder="센터명"
+                          style={{ ...inputStyle, width: "100%" }}
+                        />
+                      </td>
+                      <td style={{ padding: "3px 4px" }}>
+                        <input
+                          type="number"
+                          value={row.cost || ""}
+                          onChange={(e) => updateCostRow(row.id, "cost", parseFloat(e.target.value) || 0)}
+                          placeholder="0"
+                          style={{ ...inputStyle, width: "100%", textAlign: "right" }}
+                        />
+                      </td>
+                      <td style={{ padding: "3px 4px", textAlign: "center" }}>
+                        <button
+                          onClick={() => deleteCostRow(row.id)}
+                          title="삭제"
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: "var(--hanomad-accent)",
+                            fontSize: "1rem",
+                            lineHeight: 1,
+                            padding: "2px 4px",
+                          }}
+                        >
+                          ×
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Row 2: 요약 대시보드 + 입고예정일별 발주금액 ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Card: 요약 대시보드 */}
         <div className="ow-card min-h-[100px] flex items-center justify-center">
           {!dashboardData ? (
             <div className="ow-text-placeholder">데이터 변환 버튼을 누르면 요약 대시보드가 표시됩니다.</div>
@@ -283,7 +456,7 @@ export default function OrderWorkbench() {
           )}
         </div>
 
-        {/* Card 3: 입고예정일별 발주금액 */}
+        {/* Card: 입고예정일별 발주금액 */}
         <div className="ow-card min-h-[100px] flex items-center justify-center">
           {!dateStatusGroups ? (
             <div className="ow-text-placeholder">입고예정일별 발주금액이 여기에 표시됩니다.</div>
