@@ -165,34 +165,40 @@ export default function OrderWorkbench() {
     }
     try {
       const lines = milkRunText.trim().split("\n").map((l) => l.split("\t"));
-      let headerIdx = -1, costIdx = -1;
-      for (let i = 0; i < lines.length; i++) {
-        const joined = lines[i].join("");
-        if (joined.includes("출고지명") || joined.includes("안성4(14)")) headerIdx = i;
-        if (joined.includes("BASIC(1pt 당)") || joined.includes("계산단위")) costIdx = i;
-      }
-      if (headerIdx === -1 || costIdx === -1) {
-        setMilkRunMessage('"출고지명" 행과 "BASIC(1pt 당)" 행이 필요합니다.');
+
+      // 1. 헤더 행: 첫 셀이 "출고지명"
+      const headerIdx = lines.findIndex((l) => l[0]?.trim() === "출고지명");
+      // 2. BASIC 행: 3번째 컬럼(index 2)이 "BASIC(1pt 당)"
+      const basicIdx = lines.findIndex((l) => l[2]?.trim() === "BASIC(1pt 당)");
+
+      if (headerIdx === -1 || basicIdx === -1) {
+        setMilkRunMessage('"출고지명" 행과 계산단위 "BASIC(1pt 당)" 행이 필요합니다.');
         return;
       }
+
+      // 3. 헤더에서 센터명 추출 (4번째 컬럼부터, "이용요금" 메타 텍스트 제외)
       const headerRow = lines[headerIdx];
-      const costRow = lines[costIdx];
-      const ignore = ["출고지명", "출고지 주소", "계산단위", "이용요금", ""];
-      const centers = headerRow
-        .map((v, i) => ({ val: v.trim(), i }))
-        .filter((x) => x.val && !ignore.includes(x.val) && !x.val.includes("이용요금"));
-      let costStart = costRow.findIndex((c) => c.includes("BASIC(1pt 당)"));
-      if (costStart === -1) costStart = costRow.findIndex((c) => c.includes("계산단위"));
-      if (costStart === -1) { setMilkRunMessage("비용 행을 찾을 수 없습니다."); return; }
-      const costValues = costRow.slice(costStart + 1).map((c) => c.trim());
-      const results = [];
-      const count = Math.min(centers.length, costValues.length);
-      for (let i = 0; i < count; i++) {
-        const cost = parseFloat(costValues[i]?.replace(/,/g, ""));
-        if (isNaN(cost)) continue;
-        const cleanName = centers[i].val.split("(")[0].trim();
-        results.push({ center_raw: centers[i].val, center_clean: cleanName, cost_per_pallet: cost });
+      const centers = [];
+      for (let i = 3; i < headerRow.length; i++) {
+        const val = headerRow[i]?.trim();
+        if (val && !val.includes("이용요금")) centers.push({ val, colIdx: i });
       }
+
+      // 4. BASIC 행에서 같은 컬럼 인덱스의 비용 추출
+      const basicRow = lines[basicIdx];
+      const results = [];
+      centers.forEach(({ val, colIdx }) => {
+        const costRaw = basicRow[colIdx]?.trim()?.replace(/,/g, "");
+        const cost = parseFloat(costRaw);
+        if (!isNaN(cost) && cost > 0) {
+          results.push({
+            center_raw: val,
+            center_clean: val.split("(")[0].trim(),
+            cost_per_pallet: cost,
+          });
+        }
+      });
+
       setLocalCostRows(results);
       setMilkRunMessage(`${results.length}개 센터 추출 완료`);
     } catch (e) {
