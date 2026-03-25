@@ -354,9 +354,9 @@ h3 {
 .table-button,
 .token-button,
 .file-button {
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--ink);
-  border: 1px solid var(--line);
+  background: var(--hanomad-cream);
+  color: var(--hanomad-text-dark);
+  border: 1px solid var(--hanomad-border);
 }
 
 .secondary-button:hover,
