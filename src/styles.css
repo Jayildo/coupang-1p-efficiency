@@ -1192,35 +1192,35 @@ h3 {
    ══════════════════════════════════════════ */
 
 :root, [data-theme="light"] {
-  --hanomad-bg: #C6AD94;
-  --hanomad-cream: #F2E6D8;
-  --hanomad-brown: #5D4037;
-  --hanomad-card: #FDFBF7;
-  --hanomad-accent: #A1887F;
-  --hanomad-text-dark: #4E342E;
-  --hanomad-text-light: #795548;
-  --hanomad-sidebar-bg: #4E342E;
-  --hanomad-sidebar-text: #F2E6D8;
-  --hanomad-border: #E0D6CC;
-  --hanomad-input-bg: #FAF8F5;
-  --hanomad-table-stripe: #f8fafc;
+  --hanomad-bg: #f0f4f3;
+  --hanomad-cream: #edf3f1;
+  --hanomad-brown: #2d6a5a;
+  --hanomad-card: #ffffff;
+  --hanomad-accent: #5eae9e;
+  --hanomad-text-dark: #2d4a44;
+  --hanomad-text-light: #5a7a72;
+  --hanomad-sidebar-bg: #1a2e2a;
+  --hanomad-sidebar-text: #d1e0dc;
+  --hanomad-border: #d4e0dc;
+  --hanomad-input-bg: #f5f9f8;
+  --hanomad-table-stripe: #f5f9f8;
   --hanomad-table-bg: #fff;
 }
 
 [data-theme="dark"] {
-  --hanomad-bg: #1a1412;
-  --hanomad-cream: #2d2420;
-  --hanomad-brown: #D7CCC8;
-  --hanomad-card: #231e1b;
-  --hanomad-accent: #A1887F;
-  --hanomad-text-dark: #E8DDD5;
-  --hanomad-text-light: #BCAAA4;
-  --hanomad-sidebar-bg: #0f0c0a;
-  --hanomad-sidebar-text: #D7CCC8;
-  --hanomad-border: #3d3330;
-  --hanomad-input-bg: #2a2320;
-  --hanomad-table-stripe: #2a2320;
-  --hanomad-table-bg: #231e1b;
+  --hanomad-bg: #0f1a17;
+  --hanomad-cream: #1a2e2a;
+  --hanomad-brown: #7ecbba;
+  --hanomad-card: #162422;
+  --hanomad-accent: #5eae9e;
+  --hanomad-text-dark: #d1e0dc;
+  --hanomad-text-light: #8aaba3;
+  --hanomad-sidebar-bg: #0a1512;
+  --hanomad-sidebar-text: #a8ccc4;
+  --hanomad-border: #2a4a42;
+  --hanomad-input-bg: #1a2e2a;
+  --hanomad-table-stripe: #1a2e2a;
+  --hanomad-table-bg: #162422;
 }
 
 /* ── Sidebar Layout ── */
