@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileSpreadsheet, Files, Layers3, MessageSquarePlus } from "lucide-react";
+import { FileSpreadsheet, Files, Home, Layers3, MessageSquarePlus } from "lucide-react";
 import OrderWorkbench from "./components/OrderWorkbench";
 import DocumentWorkbench from "./components/DocumentWorkbench";
 import LoadingWorkbench from "./components/LoadingWorkbench";
@@ -8,6 +8,13 @@ import AdBanner from "./components/AdBanner";
 import { useActiveUsers } from "./lib/useActiveUsers";
 
 const TABS = [
+  {
+    id: "intro",
+    label: "소개",
+    desc: "서비스 소개",
+    detail: "",
+    icon: Home,
+  },
   {
     id: "orders",
     label: "발주서 정리",
@@ -39,7 +46,7 @@ const TABS = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("orders");
+  const [activeTab, setActiveTab] = useState("intro");
   const activeUsers = useActiveUsers();
   const [theme, setTheme] = useState(
     () => localStorage.getItem("c1p-theme") || "light"
@@ -100,9 +107,60 @@ export default function App() {
 
       {/* Main Content */}
       <main className="main-content">
-        <h1 className="page-title">{TABS.find((t) => t.id === activeTab)?.label}</h1>
-        <p className="page-desc">{TABS.find((t) => t.id === activeTab)?.detail}</p>
-        <AdBanner slot="top-banner" format="horizontal" style={{ marginBottom: 8 }} />
+        {activeTab !== "intro" && (
+          <>
+            <h1 className="page-title">{TABS.find((t) => t.id === activeTab)?.label}</h1>
+            <p className="page-desc">{TABS.find((t) => t.id === activeTab)?.detail}</p>
+            <AdBanner slot="top-banner" format="horizontal" style={{ marginBottom: 8 }} />
+          </>
+        )}
+        {activeTab === "intro" && (
+          <div style={{ maxWidth: "640px" }}>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--hanomad-text-dark)", marginBottom: "16px" }}>
+              쿠팡 1p 효율화 프로젝트
+            </h1>
+            <div style={{ fontSize: "0.95rem", lineHeight: 1.8, color: "var(--hanomad-text-dark)" }}>
+              <p style={{ marginBottom: "12px" }}>
+                쿠팡 1p 업체에서 일하면서 반복되는 업무들을 하나씩 자동화하다 보니,
+                비슷한 일을 하는 다른 분들도 함께 쓸 수 있으면 좋겠다는 생각이 들었습니다.
+              </p>
+              <p style={{ marginBottom: "12px" }}>
+                그래서 만들어 공유합니다.
+              </p>
+              <p style={{ marginBottom: "24px", color: "var(--hanomad-text-light)" }}>
+                발주서 정리, 거래명세서 추출, 적재리스트 작성 — 매일 반복하는 일들을 조금이라도 줄여보세요.
+              </p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              {TABS.filter((t) => t.id !== "intro").map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    style={{
+                      display: "flex", alignItems: "flex-start", gap: "12px",
+                      padding: "16px", borderRadius: "12px", border: "1px solid var(--hanomad-border)",
+                      background: "var(--hanomad-card)", cursor: "pointer", textAlign: "left",
+                      transition: "border-color 0.15s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--hanomad-brown)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--hanomad-border)")}
+                  >
+                    <Icon size={20} style={{ color: "var(--hanomad-accent)", flexShrink: 0, marginTop: "2px" }} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: "0.95rem", color: "var(--hanomad-text-dark)", marginBottom: "4px" }}>{tab.label}</div>
+                      <div style={{ fontSize: "0.8rem", color: "var(--hanomad-text-light)" }}>{tab.desc}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <AdBanner slot="intro-banner" format="horizontal" style={{ marginTop: 24 }} />
+          </div>
+        )}
         {activeTab === "orders" && <OrderWorkbench />}
         {activeTab === "documents" && <DocumentWorkbench />}
         {activeTab === "loading" && <LoadingWorkbench />}
