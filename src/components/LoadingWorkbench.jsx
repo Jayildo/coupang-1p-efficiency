@@ -113,6 +113,7 @@ export default function LoadingWorkbench() {
   const [visibleCount, setVisibleCount] = useState(50);
   const [message, setMessage] = useState("");
   const [vendorName, setVendorName] = useState("");
+  const [vendorLocked, setVendorLocked] = useState(false);
 
   // ── Upload & Aggregate ─────────────────────────────────────────────────
   const handleUpload = async (event) => {
@@ -664,32 +665,77 @@ export default function LoadingWorkbench() {
   return (
     <div className="workspace-stack">
       {/* Sub-tab navigation */}
-      <div style={{ display: "flex", gap: "4px", borderBottom: `2px solid var(--hanomad-border)`, marginBottom: "0" }}>
-        {SUB_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setSubTab(tab.id)}
+      <div style={{ display: "flex", alignItems: "center", borderBottom: `2px solid var(--hanomad-border)`, marginBottom: "0" }}>
+        <div style={{ display: "flex", gap: "4px" }}>
+          {SUB_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setSubTab(tab.id)}
+              style={{
+                padding: "8px 20px",
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                fontSize: "14px",
+                marginBottom: "-2px",
+                borderBottom:
+                  subTab === tab.id
+                    ? "2px solid var(--hanomad-brown)"
+                    : "2px solid transparent",
+                color:
+                  subTab === tab.id
+                    ? "var(--hanomad-brown)"
+                    : "var(--hanomad-text-light)",
+                fontWeight: subTab === tab.id ? "600" : "400"
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "6px", marginBottom: "-2px", paddingRight: "4px" }}>
+          <span style={{ fontSize: "0.8rem", color: "var(--hanomad-text-light)", whiteSpace: "nowrap" }}>업체명</span>
+          <input
+            type="text"
+            className="table-input"
             style={{
-              padding: "8px 20px",
-              border: "none",
-              background: "none",
-              cursor: "pointer",
-              fontSize: "14px",
-              marginBottom: "-2px",
-              borderBottom:
-                subTab === tab.id
-                  ? "2px solid var(--hanomad-brown)"
-                  : "2px solid transparent",
-              color:
-                subTab === tab.id
-                  ? "var(--hanomad-brown)"
-                  : "var(--hanomad-text-light)",
-              fontWeight: subTab === tab.id ? "600" : "400"
+              width: "120px", padding: "5px 10px", fontSize: "0.85rem",
+              opacity: vendorLocked ? 0.6 : 1,
+              background: vendorLocked ? "var(--hanomad-cream)" : "var(--hanomad-input-bg)",
             }}
-          >
-            {tab.label}
-          </button>
-        ))}
+            placeholder="입력"
+            value={vendorName}
+            onChange={(e) => setVendorName(e.target.value)}
+            disabled={vendorLocked}
+          />
+          {!vendorLocked ? (
+            <button
+              onClick={() => { if (vendorName.trim()) setVendorLocked(true); }}
+              disabled={!vendorName.trim()}
+              style={{
+                padding: "4px 10px", fontSize: "0.78rem", fontWeight: 600,
+                border: "none", borderRadius: "6px", cursor: vendorName.trim() ? "pointer" : "not-allowed",
+                background: "var(--hanomad-brown)", color: "#fff",
+                opacity: vendorName.trim() ? 1 : 0.4,
+                whiteSpace: "nowrap",
+              }}
+            >
+              확인
+            </button>
+          ) : (
+            <button
+              onClick={() => setVendorLocked(false)}
+              style={{
+                padding: "4px 10px", fontSize: "0.78rem", fontWeight: 600,
+                border: `1px solid var(--hanomad-border)`, borderRadius: "6px", cursor: "pointer",
+                background: "var(--hanomad-card)", color: "var(--hanomad-text-light)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              편집
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ═══ 업로드 탭 ═══ */}
@@ -699,17 +745,9 @@ export default function LoadingWorkbench() {
           <div className="action-row" style={{ gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
               <label className="file-button">
                 <FileUp size={16} />
-                발주서 업로드
+                발주skulist 업로드
                 <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUpload} />
               </label>
-              <input
-                type="text"
-                className="table-input"
-                style={{ width: "140px", padding: "6px 10px" }}
-                placeholder="업체명 입력"
-                value={vendorName}
-                onChange={(e) => setVendorName(e.target.value)}
-              />
               {aggregated.length > 0 && (
                 <>
                   <select
