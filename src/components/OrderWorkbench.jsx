@@ -197,21 +197,12 @@ export default function OrderWorkbench() {
     );
     const workbook = utils.book_new();
     utils.book_append_sheet(workbook, worksheet, "order_summary");
-    writeFile(workbook, "hanomad-order-summary.xlsx");
+    writeFile(workbook, "order-summary.xlsx");
   };
 
   return (
     <div className="workspace-stack">
-      <section className="glass-card workspace-intro">
-        <div>
-          <div className="section-label">Upload + Intelligence</div>
-          <h2>발주 데이터를 센터별 운영 지표로 변환합니다.</h2>
-          <p>
-            기존 프로젝트의 `OrderSummaryTab` 흐름을 정리해서, 업로드와 요약만
-            남긴 구조입니다.
-          </p>
-        </div>
-        <div className="action-row">
+      <div className="action-row">
           <label className="file-button">
             <FileUp size={16} />
             발주 파일 업로드
@@ -225,14 +216,8 @@ export default function OrderWorkbench() {
             <Download size={16} />
             요약 내보내기
           </button>
-        </div>
-        <p className="workspace-message">{message}</p>
-        {!isSupabaseConfigured && (
-          <p className="workspace-hint">
-            Supabase 환경 변수가 없어서 CBM / 운송비는 로컬 계산만 수행합니다.
-          </p>
-        )}
-      </section>
+      </div>
+      {message && <p className="workspace-message">{message}</p>}
 
       <section className="stats-grid">
         <article className="glass-card stat-card">

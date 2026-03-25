@@ -21,19 +21,19 @@ const views = [
     id: "documents",
     label: "거래명세서",
     title: "거래명세서",
-    description: "PDF 추출 및 ZIP 정리"
+    description: "PDF 추출·ZIP"
   },
   {
     id: "loading",
     label: "적재리스트",
     title: "적재리스트",
-    description: "박스·팔레트 배정과 내보내기"
+    description: "박스·팔레트 배정"
   },
   {
     id: "feedback",
     label: "건의함",
     title: "건의함",
-    description: "개선 건의 및 공감"
+    description: "건의 및 공감"
   }
 ];
 
@@ -75,13 +75,7 @@ export default function App() {
       </aside>
 
       <main className="main-panel">
-        <header className="page-header glass-card">
-          <div>
-            <div className="section-label">{activeMeta.title}</div>
-            <h1>{activeMeta.label}</h1>
-            <p>{activeMeta.description}</p>
-          </div>
-        </header>
+        <h1 className="page-title">{activeMeta.label}</h1>
 
         {activeView === "orders" && <OrderWorkbench />}
         {activeView === "documents" && <DocumentWorkbench />}

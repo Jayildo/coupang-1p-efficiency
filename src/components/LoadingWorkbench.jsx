@@ -690,12 +690,7 @@ export default function LoadingWorkbench() {
       {subTab === "upload" && (
         <section className="glass-card">
           {/* Header / upload controls */}
-          <div className="table-header-line">
-            <div>
-              <div className="section-label">Loading Planner</div>
-              <h2>발주서를 업로드하고 박스·팔레트를 배정합니다.</h2>
-            </div>
-            <div className="action-row" style={{ gap: "8px", flexWrap: "wrap" }}>
+          <div className="action-row" style={{ gap: "8px", flexWrap: "wrap" }}>
               <label className="file-button">
                 <FileUp size={16} />
                 발주서 업로드
@@ -723,7 +718,6 @@ export default function LoadingWorkbench() {
                   />
                 </>
               )}
-            </div>
           </div>
 
           {message && (

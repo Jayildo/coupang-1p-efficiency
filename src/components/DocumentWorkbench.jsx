@@ -122,23 +122,14 @@ export default function DocumentWorkbench() {
     const url = URL.createObjectURL(output);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "hanomad-documents.zip";
+    link.download = "documents.zip";
     link.click();
     URL.revokeObjectURL(url);
   };
 
   return (
     <div className="workspace-stack">
-      <section className="glass-card workspace-intro">
-        <div>
-          <div className="section-label">Document Studio</div>
-          <h2>거래명세서에서 필요한 PDF 페이지만 자동 추출합니다.</h2>
-          <p>
-            기존 `PdfFilter` 로직을 유지하되, 업로드와 처리 상태를 서비스형 화면에
-            맞게 재정리했습니다.
-          </p>
-        </div>
-        <div className="action-row">
+      <div className="action-row">
           <label className="file-button">
             <Upload size={16} />
             PDF 추가
@@ -152,8 +143,7 @@ export default function DocumentWorkbench() {
             <Archive size={16} />
             ZIP 다운로드
           </button>
-        </div>
-      </section>
+      </div>
 
       <section
         className={isDragging ? "glass-card dropzone active" : "glass-card dropzone"}

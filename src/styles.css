@@ -249,6 +249,13 @@ h3 {
   padding: 24px;
 }
 
+.page-title {
+  margin: 0 0 var(--sp-md);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .page-header h1 {
   margin: 0 0 8px;
   font-size: 2rem;

@@ -11,7 +11,7 @@ const REACTIONS = [
 ];
 
 function getOrCreateFingerprint() {
-  const key = "hanomad_fp";
+  const key = "c1p_fp";
   let fp = localStorage.getItem(key);
   if (!fp) {
     fp = crypto.randomUUID();
@@ -190,16 +190,7 @@ export default function FeedbackWorkbench() {
 
   return (
     <div className="workspace-stack">
-      {/* Header */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "0.5rem",
-        }}
-      >
-        <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700 }}>건의함</h2>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
         <button
           className="btn-primary"
           onClick={() => setFormOpen((v) => !v)}
@@ -208,7 +199,7 @@ export default function FeedbackWorkbench() {
           {formOpen ? <X size={16} /> : <MessageSquarePlus size={16} />}
           {formOpen ? "닫기" : "새 건의"}
         </button>
-      </header>
+      </div>
 
       {/* New suggestion form */}
       {formOpen && (
