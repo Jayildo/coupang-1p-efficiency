@@ -1,86 +1,95 @@
-import { useMemo, useState } from "react";
-import {
-  FileSpreadsheet,
-  Files,
-  Layers3,
-  MessageSquarePlus
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { FileSpreadsheet, Files, Layers3, MessageSquarePlus } from "lucide-react";
 import OrderWorkbench from "./components/OrderWorkbench";
 import DocumentWorkbench from "./components/DocumentWorkbench";
 import LoadingWorkbench from "./components/LoadingWorkbench";
 import FeedbackWorkbench from "./components/FeedbackWorkbench";
 
-const views = [
+const TABS = [
   {
     id: "orders",
     label: "발주서 정리",
-    title: "발주서 정리",
-    description: "센터별 요약, CBM, 팔레트 예측"
+    desc: "센터별 요약, CBM, 팔레트 예측",
+    icon: FileSpreadsheet,
   },
   {
     id: "documents",
     label: "거래명세서",
-    title: "거래명세서",
-    description: "PDF 추출·ZIP"
+    desc: "PDF 추출·ZIP",
+    icon: Files,
   },
   {
     id: "loading",
     label: "적재리스트",
-    title: "적재리스트",
-    description: "박스·팔레트 배정"
+    desc: "박스·팔레트 배정",
+    icon: Layers3,
   },
   {
     id: "feedback",
     label: "건의함",
-    title: "건의함",
-    description: "건의 및 공감"
-  }
+    desc: "건의 및 공감",
+    icon: MessageSquarePlus,
+  },
 ];
 
 export default function App() {
-  const [activeView, setActiveView] = useState("orders");
-
-  const activeMeta = useMemo(
-    () => views.find((view) => view.id === activeView) ?? views[0],
-    [activeView]
+  const [activeTab, setActiveTab] = useState("orders");
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("c1p-theme") || "light"
   );
 
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("c1p-theme", theme);
+  }, [theme]);
+
   return (
-    <div className="app-shell">
+    <div className="layout">
+      {/* Sidebar */}
       <aside className="sidebar">
-        <div className="brand-block">
-          <div className="brand-mark">C1P</div>
-          <div>
-            <p className="brand-kicker">효율화 프로젝트</p>
-            <h2>쿠팡 1p</h2>
-          </div>
+        <div className="sidebar-logo">
+          <span className="logo-h">C</span>
+          <span className="logo-text">1P</span>
         </div>
 
-        <nav className="nav-list">
-          {views.map((view) => (
-            <button
-              key={view.id}
-              className={view.id === activeView ? "nav-item active" : "nav-item"}
-              onClick={() => setActiveView(view.id)}
-            >
-              <strong>{view.label}</strong>
-              <span>{view.description}</span>
-            </button>
-          ))}
+        <nav className="sidebar-nav">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                className={`nav-item${activeTab === tab.id ? " active" : ""}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <span className="nav-icon">
+                  <Icon size={20} />
+                </span>
+                <span className="nav-text">{tab.label}</span>
+                <span className="nav-tooltip">{tab.label}</span>
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="sidebar-note glass-card">
-          쿠팡 1p 셀러를 위한 발주·문서·적재 워크스페이스입니다.
+        <div className="sidebar-footer">
+          <button
+            className="theme-toggle"
+            onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+          >
+            <span>{theme === "light" ? "🌙" : "☀️"}</span>
+            <span className="toggle-text">
+              {theme === "light" ? "다크 모드" : "라이트 모드"}
+            </span>
+          </button>
         </div>
       </aside>
 
-      <main className="main-panel">
-        <h1 className="page-title">{activeMeta.label}</h1>
-
-        {activeView === "orders" && <OrderWorkbench />}
-        {activeView === "documents" && <DocumentWorkbench />}
-        {activeView === "loading" && <LoadingWorkbench />}
-        {activeView === "feedback" && <FeedbackWorkbench />}
+      {/* Main Content */}
+      <main className="main-content">
+        {activeTab === "orders" && <OrderWorkbench />}
+        {activeTab === "documents" && <DocumentWorkbench />}
+        {activeTab === "loading" && <LoadingWorkbench />}
+        {activeTab === "feedback" && <FeedbackWorkbench />}
       </main>
     </div>
   );
