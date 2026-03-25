@@ -895,6 +895,41 @@ h3 {
   min-height: 90px;
 }
 
+/* ── File Input (원본 스타일) ─────────────── */
+.file-input {
+  display: block;
+  width: 100%;
+  font-size: 14px;
+  color: var(--hanomad-text-light, #795548);
+}
+.file-input::file-selector-button {
+  margin-right: 16px;
+  padding: 8px 20px;
+  border-radius: 9999px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--hanomad-cream, #F2E6D8);
+  color: var(--hanomad-text-dark, #4E342E);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.file-input::file-selector-button:hover {
+  background: var(--hanomad-accent, #A1887F);
+  color: #fff;
+}
+
+/* ── Page Title ──────────────────────────── */
+.page-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: var(--hanomad-text-dark, #4E342E);
+}
+[data-theme="dark"] .page-title {
+  color: var(--hanomad-text-dark, #E8DDD5);
+}
+
 /* ══════════════════════════════════════════
    Hanomad Sidebar Layout (ported from original)
    ══════════════════════════════════════════ */

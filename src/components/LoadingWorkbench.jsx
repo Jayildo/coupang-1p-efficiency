@@ -107,6 +107,7 @@ export default function LoadingWorkbench() {
   const [barcodeSearch, setBarcodeSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(50);
   const [message, setMessage] = useState("");
+  const [vendorName, setVendorName] = useState("");
 
   // ── Upload & Aggregate ─────────────────────────────────────────────────
   const handleUpload = async (event) => {
@@ -428,7 +429,7 @@ export default function LoadingWorkbench() {
         ],
         [
           "입고예정일자", pg[0]?.date || "", "", "납품센터명", selectedCenter, "",
-          "업체명", "아노마드"
+          "업체명", vendorName || "-"
         ],
         ["입고요청서번호", po],
         [],
@@ -476,7 +477,7 @@ export default function LoadingWorkbench() {
         ],
         [
           "입고예정일자", items[0]?.date || "", "", "납품센터명", selectedCenter, "",
-          "업체명", "아노마드"
+          "업체명", vendorName || "-"
         ],
         ["입고요청서번호", po],
         [],
@@ -513,7 +514,7 @@ export default function LoadingWorkbench() {
         ["박스번호", selectedBox],
         ["입고일+센터명", `${pg[0]?.date || ""} ${selectedCenter}`.trim()],
         ["입고예정일", pg[0]?.date || ""],
-        ["업체명", "아노마드"],
+        ["업체명", vendorName || "-"],
         [],
         ["번호", "SKU No", "SKU NAME", "바코드", "수량"]
       ];
@@ -542,7 +543,7 @@ export default function LoadingWorkbench() {
         ["박스번호", bNo],
         ["입고일+센터명", `${items[0]?.date || ""} ${selectedCenter}`.trim()],
         ["입고예정일", items[0]?.date || ""],
-        ["업체명", "아노마드"],
+        ["업체명", vendorName || "-"],
         [],
         ["번호", "SKU No", "SKU NAME", "바코드", "수량"]
       ];
@@ -595,7 +596,7 @@ export default function LoadingWorkbench() {
             <div style="display:flex">
               <span style="flex:1"><b>입고예정일자.</b> [ ${items[0]?.date || ""} ]</span>
               <span style="flex:1"><b>납품센터명.</b> [ ${selectedCenter} 센터]</span>
-              <span style="flex:1"><b>업체명.</b> [ <b>아노마드</b> ]</span>
+              <span style="flex:1"><b>업체명.</b> [ <b>${vendorName || "-"}</b> ]</span>
             </div>
             <div><b>입고요청서번호.</b> [ <span style="font-size:14px">${po || "____"}</span> ]</div>
           </div>
@@ -630,7 +631,7 @@ export default function LoadingWorkbench() {
             <div style="display:flex">
               <span style="flex:1"><b>입고예정일자.</b> [ ${items[0]?.date || ""} ]</span>
               <span style="flex:1"><b>납품센터명.</b> [ ${selectedCenter} 센터]</span>
-              <span style="flex:1"><b>업체명.</b> [ <b>아노마드</b> ]</span>
+              <span style="flex:1"><b>업체명.</b> [ <b>${vendorName || "-"}</b> ]</span>
             </div>
           </div>
           <table><thead><tr><th>번호</th><th>SKU No</th><th>SKU NAME</th><th>바코드</th><th>수량</th></tr></thead><tbody>${rows}</tbody></table>
@@ -690,12 +691,20 @@ export default function LoadingWorkbench() {
       {subTab === "upload" && (
         <section className="glass-card">
           {/* Header / upload controls */}
-          <div className="action-row" style={{ gap: "8px", flexWrap: "wrap" }}>
+          <div className="action-row" style={{ gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
               <label className="file-button">
                 <FileUp size={16} />
                 발주서 업로드
                 <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUpload} />
               </label>
+              <input
+                type="text"
+                className="table-input"
+                style={{ width: "140px", padding: "6px 10px" }}
+                placeholder="업체명 입력"
+                value={vendorName}
+                onChange={(e) => setVendorName(e.target.value)}
+              />
               {aggregated.length > 0 && (
                 <>
                   <select
@@ -1051,7 +1060,7 @@ export default function LoadingWorkbench() {
                           <div style={{ display: "flex" }}>
                             <span style={{ flex: 1 }}><b>입고예정일자.</b> [ {pg[0]?.date || ""} ]</span>
                             <span style={{ flex: 1 }}><b>납품센터명.</b> [ {selectedCenter} 센터]</span>
-                            <span style={{ flex: 1 }}><b>업체명.</b> [ <b>아노마드</b> ]</span>
+                            <span style={{ flex: 1 }}><b>업체명.</b> [ <b>{vendorName || "-"}</b> ]</span>
                           </div>
                           <div>
                             <b>입고요청서번호.</b> [ <span style={{ fontSize: "12px" }}>{po || "____"}</span> ]
@@ -1194,7 +1203,7 @@ export default function LoadingWorkbench() {
                         <div style={{ display: "flex" }}>
                           <span style={{ flex: 1 }}><b>입고예정일자.</b> [ {pg[0]?.date || ""} ]</span>
                           <span style={{ flex: 1 }}><b>납품센터명.</b> [ {selectedCenter} 센터]</span>
-                          <span style={{ flex: 1 }}><b>업체명.</b> [ <b>아노마드</b> ]</span>
+                          <span style={{ flex: 1 }}><b>업체명.</b> [ <b>{vendorName || "-"}</b> ]</span>
                         </div>
                       </div>
                       <table style={{ borderCollapse: "collapse", width: "100%", fontSize: "13px" }}>

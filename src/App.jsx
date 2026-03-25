@@ -86,6 +86,7 @@ export default function App() {
 
       {/* Main Content */}
       <main className="main-content">
+        <h1 className="page-title">{TABS.find((t) => t.id === activeTab)?.label}</h1>
         {activeTab === "orders" && <OrderWorkbench />}
         {activeTab === "documents" && <DocumentWorkbench />}
         {activeTab === "loading" && <LoadingWorkbench />}
