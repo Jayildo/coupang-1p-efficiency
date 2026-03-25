@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MessageCircle, MessageSquarePlus, Send, X } from "lucide-react";
+import { Lock, MessageCircle, MessageSquarePlus, Send, X } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
 const CATEGORIES = ["전체", "기능요청", "버그신고", "UI/UX", "기타"];
@@ -9,6 +9,35 @@ const REACTIONS = [
   { emoji: "🔥", label: "급해요" },
   { emoji: "💡", label: "좋은아이디어" },
 ];
+
+const ADMIN_PASSWORD = "c1p-admin-2026";
+
+const STATUS_OPTIONS = ["접수", "검토중", "반영완료", "보류"];
+
+function statusStyle(status) {
+  switch (status) {
+    case "검토중":
+      return {
+        background: "color-mix(in srgb, var(--hanomad-accent) 15%, transparent)",
+        color: "var(--hanomad-accent)",
+      };
+    case "반영완료":
+      return {
+        background: "color-mix(in srgb, var(--hanomad-brown) 15%, transparent)",
+        color: "var(--hanomad-brown)",
+      };
+    case "보류":
+      return {
+        background: "rgba(120,120,120,0.15)",
+        color: "#888",
+      };
+    default: // 접수
+      return {
+        background: "color-mix(in srgb, var(--hanomad-text-light) 12%, transparent)",
+        color: "var(--hanomad-text-light)",
+      };
+  }
+}
 
 function getOrCreateFingerprint() {
   const key = "c1p_fp";
@@ -48,6 +77,13 @@ export default function FeedbackWorkbench() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  // Admin state
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+
   const fp = getOrCreateFingerprint();
 
   async function fetchData() {
@@ -59,6 +95,7 @@ export default function FeedbackWorkbench() {
           supabase
             .from("suggestion_stats")
             .select("*")
+            .order("pinned", { ascending: false })
             .order("total_reactions", { ascending: false })
             .order("created_at", { ascending: false }),
           supabase.from("reactions").select("*").eq("fingerprint", fp),
@@ -172,10 +209,85 @@ export default function FeedbackWorkbench() {
     }
   }
 
+  function handleAdminLogin() {
+    if (adminPassword === ADMIN_PASSWORD) {
+      setIsAdmin(true);
+      setShowAdminLogin(false);
+      setAdminPassword("");
+    } else {
+      alert("비밀번호가 올바르지 않습니다.");
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    try {
+      const { error } = await supabase.from("suggestions").delete().eq("id", id);
+      if (error) throw error;
+      await fetchData();
+    } catch (err) {
+      alert(err.message || "삭제에 실패했습니다.");
+    }
+  }
+
+  async function handleReplySubmit(id) {
+    if (!replyText.trim()) return;
+    try {
+      const { error } = await supabase
+        .from("suggestions")
+        .update({ admin_reply: replyText.trim(), admin_replied_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+      setReplyingTo(null);
+      setReplyText("");
+      await fetchData();
+    } catch (err) {
+      alert(err.message || "답변 등록에 실패했습니다.");
+    }
+  }
+
+  async function handleStatusChange(id, status) {
+    try {
+      const { error } = await supabase.from("suggestions").update({ status }).eq("id", id);
+      if (error) throw error;
+      await fetchData();
+    } catch (err) {
+      alert(err.message || "상태 변경에 실패했습니다.");
+    }
+  }
+
+  async function handleTogglePin(id, currentPinned) {
+    try {
+      const { error } = await supabase
+        .from("suggestions")
+        .update({ pinned: !currentPinned })
+        .eq("id", id);
+      if (error) throw error;
+      await fetchData();
+    } catch (err) {
+      alert(err.message || "고정 변경에 실패했습니다.");
+    }
+  }
+
   const filteredSuggestions =
     activeCategory === "전체"
       ? suggestions
       : suggestions.filter((s) => s.category === activeCategory);
+
+  const adminBtnStyle = {
+    padding: "3px 10px",
+    fontSize: "0.75rem",
+    border: "1px solid var(--hanomad-border)",
+    borderRadius: "6px",
+    background: "var(--hanomad-card)",
+    color: "var(--hanomad-text-light)",
+    cursor: "pointer",
+  };
+
+  const deleteBtnStyle = {
+    ...adminBtnStyle,
+    color: "#e11d48",
+  };
 
   if (!isSupabaseConfigured) {
     return (
@@ -190,7 +302,77 @@ export default function FeedbackWorkbench() {
 
   return (
     <div className="workspace-stack">
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+        {/* Admin lock area */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <button
+            onClick={() => {
+              if (isAdmin) {
+                setIsAdmin(false);
+              } else {
+                setShowAdminLogin((v) => !v);
+              }
+            }}
+            title={isAdmin ? "관리자 로그아웃" : "관리자 로그인"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.3rem",
+              padding: "4px 8px",
+              border: "1px solid var(--hanomad-border)",
+              borderRadius: "6px",
+              background: "transparent",
+              color: isAdmin ? "var(--hanomad-brown)" : "var(--hanomad-text-light)",
+              cursor: "pointer",
+              fontSize: "0.8rem",
+            }}
+          >
+            <Lock size={14} />
+          </button>
+          {isAdmin && (
+            <span
+              style={{
+                fontSize: "0.72rem",
+                padding: "0.15rem 0.55rem",
+                borderRadius: "999px",
+                background: "color-mix(in srgb, var(--hanomad-brown) 15%, transparent)",
+                color: "var(--hanomad-brown)",
+                fontWeight: 700,
+              }}
+            >
+              관리자
+            </span>
+          )}
+          {showAdminLogin && !isAdmin && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAdminLogin()}
+                placeholder="비밀번호"
+                className="input-field"
+                style={{ padding: "3px 8px", fontSize: "0.8rem", width: "130px" }}
+                autoFocus
+              />
+              <button
+                onClick={handleAdminLogin}
+                className="btn-primary"
+                style={{ padding: "3px 10px", fontSize: "0.8rem" }}
+              >
+                확인
+              </button>
+              <button
+                onClick={() => { setShowAdminLogin(false); setAdminPassword(""); }}
+                style={{ ...adminBtnStyle }}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* New suggestion button */}
         <button
           className="btn-primary"
           onClick={() => setFormOpen((v) => !v)}
@@ -336,20 +518,39 @@ export default function FeedbackWorkbench() {
                   gap: "0.5rem",
                 }}
               >
-                <span style={{ fontWeight: 700, fontSize: "1rem", flex: 1 }}>{s.title}</span>
-                <span
-                  style={{
-                    fontSize: "0.72rem",
-                    padding: "0.15rem 0.55rem",
-                    borderRadius: "999px",
-                    background: "color-mix(in srgb, var(--hanomad-brown) 12%, transparent)",
-                    color: "var(--hanomad-brown)",
-                    whiteSpace: "nowrap",
-                    fontWeight: 600,
-                  }}
-                >
-                  {s.category}
+                <span style={{ fontWeight: 700, fontSize: "1rem", flex: 1 }}>
+                  {s.pinned && <span style={{ marginRight: "0.3rem" }}>📌</span>}
+                  {s.title}
                 </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexShrink: 0 }}>
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      padding: "0.15rem 0.55rem",
+                      borderRadius: "999px",
+                      background: "color-mix(in srgb, var(--hanomad-brown) 12%, transparent)",
+                      color: "var(--hanomad-brown)",
+                      whiteSpace: "nowrap",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {s.category}
+                  </span>
+                  {s.status && (
+                    <span
+                      style={{
+                        fontSize: "0.72rem",
+                        padding: "0.15rem 0.55rem",
+                        borderRadius: "999px",
+                        whiteSpace: "nowrap",
+                        fontWeight: 600,
+                        ...statusStyle(s.status),
+                      }}
+                    >
+                      {s.status}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Content */}
@@ -364,6 +565,26 @@ export default function FeedbackWorkbench() {
               >
                 {s.content}
               </p>
+
+              {/* Admin reply */}
+              {s.admin_reply && (
+                <div
+                  style={{
+                    margin: "0 0 0.6rem",
+                    padding: "0.6rem 0.85rem",
+                    borderRadius: "8px",
+                    background: "color-mix(in srgb, var(--hanomad-brown) 8%, transparent)",
+                    borderLeft: "3px solid var(--hanomad-brown)",
+                  }}
+                >
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--hanomad-brown)", marginBottom: "0.25rem" }}>
+                    관리자 답변
+                  </div>
+                  <p style={{ margin: 0, fontSize: "0.85rem", whiteSpace: "pre-wrap", wordBreak: "break-word", opacity: 0.85 }}>
+                    {s.admin_reply}
+                  </p>
+                </div>
+              )}
 
               {/* Meta */}
               <div
@@ -415,6 +636,81 @@ export default function FeedbackWorkbench() {
                   })}
                 </div>
               </div>
+
+              {/* Admin actions */}
+              {isAdmin && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.65rem", flexWrap: "wrap" }}>
+                  <button style={deleteBtnStyle} onClick={() => handleDelete(s.id)}>
+                    삭제
+                  </button>
+                  <button
+                    style={adminBtnStyle}
+                    onClick={() => {
+                      if (replyingTo === s.id) {
+                        setReplyingTo(null);
+                        setReplyText("");
+                      } else {
+                        setReplyingTo(s.id);
+                        setReplyText(s.admin_reply || "");
+                      }
+                    }}
+                  >
+                    답변
+                  </button>
+                  <select
+                    value={s.status || "접수"}
+                    onChange={(e) => handleStatusChange(s.id, e.target.value)}
+                    style={{
+                      padding: "3px 8px",
+                      fontSize: "0.75rem",
+                      border: "1px solid var(--hanomad-border)",
+                      borderRadius: "6px",
+                      background: "var(--hanomad-card)",
+                      color: "var(--hanomad-text-light)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {STATUS_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                  <button style={adminBtnStyle} onClick={() => handleTogglePin(s.id, s.pinned)}>
+                    {s.pinned ? "고정해제" : "고정"}
+                  </button>
+                </div>
+              )}
+
+              {/* Inline reply form */}
+              {isAdmin && replyingTo === s.id && (
+                <div style={{ marginTop: "0.6rem", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                  <textarea
+                    className="input-field"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="관리자 답변을 입력하세요"
+                    rows={3}
+                    style={{ resize: "vertical", fontSize: "0.85rem" }}
+                    autoFocus
+                  />
+                  <div style={{ display: "flex", gap: "0.4rem", justifyContent: "flex-end" }}>
+                    <button
+                      style={adminBtnStyle}
+                      onClick={() => { setReplyingTo(null); setReplyText(""); }}
+                    >
+                      취소
+                    </button>
+                    <button
+                      className="btn-primary"
+                      style={{ padding: "3px 12px", fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "0.3rem" }}
+                      onClick={() => handleReplySubmit(s.id)}
+                      disabled={!replyText.trim()}
+                    >
+                      <Send size={12} />
+                      등록
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
